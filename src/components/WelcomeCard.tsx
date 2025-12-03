@@ -1,14 +1,21 @@
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Cloud, Sparkles, ChevronDown } from "lucide-react";
 
 export const WelcomeCard = () => {
+  const navigate = useNavigate();
+
   const scrollToFeatures = () => {
     document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
   };
 
   const scrollToAbout = () => {
     document.getElementById("about")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const goToDesktop = () => {
+    navigate("/desktop");
   };
 
   return (
@@ -42,7 +49,7 @@ export const WelcomeCard = () => {
         <div className="flex flex-col w-full space-y-3 pt-2">
           <Button 
             size="lg" 
-            onClick={scrollToFeatures}
+            onClick={goToDesktop}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/50 hover:shadow-primary/70 transition-all duration-300 hover:scale-[1.02] border border-primary"
             style={{ 
               textShadow: "0 0 5px rgba(255,255,255,0.5)"
