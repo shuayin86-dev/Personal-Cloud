@@ -3,13 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Folder, FileText, Terminal, Settings, Image, Music, 
-  Globe, Calculator, Calendar, Clock, Wifi, Battery, 
+  Globe, Calculator, Clock, Wifi, Battery, 
   Volume2, X, Minus, Square, Search, Code, MessageSquare, LogOut
 } from "lucide-react";
 import { CodeEditor } from "@/components/desktop/CodeEditor";
 import { FileManager } from "@/components/desktop/FileManager";
 import { MusicPlayer } from "@/components/desktop/MusicPlayer";
 import { GroupChat } from "@/components/desktop/GroupChat";
+import { PhotoGallery } from "@/components/desktop/PhotoGallery";
 
 interface Window {
   id: string;
@@ -22,6 +23,20 @@ interface Window {
   content: React.ReactNode;
 }
 
+// Icon styling for realistic computer icons
+const iconStyles: Record<string, { bg: string; iconColor: string }> = {
+  files: { bg: "bg-gradient-to-br from-amber-400 to-amber-600", iconColor: "text-amber-900" },
+  "code-editor": { bg: "bg-gradient-to-br from-blue-500 to-indigo-600", iconColor: "text-white" },
+  terminal: { bg: "bg-gradient-to-br from-zinc-700 to-zinc-900", iconColor: "text-green-400" },
+  browser: { bg: "bg-gradient-to-br from-sky-400 to-blue-600", iconColor: "text-white" },
+  notes: { bg: "bg-gradient-to-br from-yellow-300 to-yellow-500", iconColor: "text-yellow-900" },
+  music: { bg: "bg-gradient-to-br from-pink-500 to-rose-600", iconColor: "text-white" },
+  chat: { bg: "bg-gradient-to-br from-emerald-400 to-teal-600", iconColor: "text-white" },
+  calculator: { bg: "bg-gradient-to-br from-gray-600 to-gray-800", iconColor: "text-white" },
+  photos: { bg: "bg-gradient-to-br from-purple-500 to-violet-600", iconColor: "text-white" },
+  settings: { bg: "bg-gradient-to-br from-slate-500 to-slate-700", iconColor: "text-white" },
+};
+
 const desktopIcons = [
   { id: "files", name: "Files", icon: Folder },
   { id: "code-editor", name: "Code Editor", icon: Code },
@@ -29,6 +44,7 @@ const desktopIcons = [
   { id: "browser", name: "Browser", icon: Globe },
   { id: "notes", name: "Notes", icon: FileText },
   { id: "music", name: "Music", icon: Music },
+  { id: "photos", name: "Photos", icon: Image },
   { id: "chat", name: "Chat", icon: MessageSquare },
   { id: "calculator", name: "Calculator", icon: Calculator },
   { id: "settings", name: "Settings", icon: Settings },
@@ -119,6 +135,8 @@ const Desktop = () => {
         return <MusicPlayer />;
       case "chat":
         return <GroupChat />;
+      case "photos":
+        return <PhotoGallery />;
       case "terminal":
         return (
           <div className="h-full bg-black/90 p-4 font-mono text-sm text-primary">
@@ -183,35 +201,88 @@ const Desktop = () => {
   if (!user) return null;
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-background via-card to-background">
+    <div className="h-screen w-screen overflow-hidden relative">
+      {/* Neon Gradient Background */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          background: `
+            radial-gradient(ellipse at 20% 20%, hsl(280, 100%, 25%) 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 20%, hsl(200, 100%, 30%) 0%, transparent 50%),
+            radial-gradient(ellipse at 40% 80%, hsl(320, 100%, 20%) 0%, transparent 50%),
+            radial-gradient(ellipse at 90% 70%, hsl(260, 100%, 20%) 0%, transparent 40%),
+            linear-gradient(180deg, hsl(250, 50%, 8%) 0%, hsl(260, 40%, 5%) 100%)
+          `,
+        }}
+      />
+      
+      {/* Animated Glow Orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div 
+          className="absolute w-96 h-96 rounded-full blur-3xl opacity-30 animate-pulse"
+          style={{ 
+            background: "radial-gradient(circle, hsl(280, 100%, 50%), transparent 70%)",
+            top: "10%", 
+            left: "5%",
+            animation: "pulse 4s ease-in-out infinite"
+          }}
+        />
+        <div 
+          className="absolute w-80 h-80 rounded-full blur-3xl opacity-25"
+          style={{ 
+            background: "radial-gradient(circle, hsl(180, 100%, 50%), transparent 70%)",
+            top: "60%", 
+            right: "10%",
+            animation: "pulse 5s ease-in-out infinite 1s"
+          }}
+        />
+        <div 
+          className="absolute w-64 h-64 rounded-full blur-3xl opacity-20"
+          style={{ 
+            background: "radial-gradient(circle, hsl(320, 100%, 50%), transparent 70%)",
+            bottom: "20%", 
+            left: "40%",
+            animation: "pulse 6s ease-in-out infinite 2s"
+          }}
+        />
+      </div>
+
       {/* Grid Background */}
       <div 
-        className="absolute inset-0 opacity-10"
+        className="absolute inset-0 opacity-15"
         style={{
-          backgroundImage: `linear-gradient(hsl(var(--primary) / 0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary) / 0.3) 1px, transparent 1px)`,
-          backgroundSize: "50px 50px",
+          backgroundImage: `linear-gradient(hsl(var(--primary) / 0.4) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary) / 0.4) 1px, transparent 1px)`,
+          backgroundSize: "60px 60px",
         }}
       />
 
       {/* Desktop Icons */}
-      <div className="absolute top-4 left-4 grid grid-cols-1 gap-4 z-10">
-        {desktopIcons.map(({ id, name, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => openWindow(id, name, <Icon className="w-4 h-4" />)}
-            className="group flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-primary/10 transition-all"
-          >
-            <div 
-              className="w-12 h-12 rounded-lg bg-card/80 border border-primary/30 flex items-center justify-center group-hover:border-primary group-hover:shadow-lg group-hover:shadow-primary/30 transition-all"
-              style={{ boxShadow: "0 0 10px hsl(var(--primary) / 0.2)" }}
+      <div className="absolute top-4 left-4 grid grid-cols-1 gap-3 z-10">
+        {desktopIcons.map(({ id, name, icon: Icon }) => {
+          const style = iconStyles[id] || { bg: "bg-primary", iconColor: "text-primary-foreground" };
+          return (
+            <button
+              key={id}
+              onClick={() => openWindow(id, name, <Icon className="w-4 h-4" />)}
+              className="group flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 transition-all"
             >
-              <Icon className="w-6 h-6 text-primary" />
-            </div>
-            <span className="text-xs text-foreground font-medium" style={{ textShadow: "0 0 10px hsl(var(--background))" }}>
-              {name}
-            </span>
-          </button>
-        ))}
+              <div 
+                className={`w-14 h-14 rounded-2xl ${style.bg} flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:shadow-xl transition-all duration-200`}
+                style={{ 
+                  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)"
+                }}
+              >
+                <Icon className={`w-7 h-7 ${style.iconColor} drop-shadow-sm`} />
+              </div>
+              <span 
+                className="text-xs text-white font-medium px-2 py-0.5 rounded bg-black/40 backdrop-blur-sm"
+                style={{ textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)" }}
+              >
+                {name}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Windows */}
