@@ -23,29 +23,39 @@ interface Window {
   content: React.ReactNode;
 }
 
-// Icon styling for realistic computer icons
-const iconStyles: Record<string, { bg: string; iconColor: string }> = {
-  files: { bg: "bg-gradient-to-br from-amber-400 to-amber-600", iconColor: "text-amber-900" },
-  "code-editor": { bg: "bg-gradient-to-br from-blue-500 to-indigo-600", iconColor: "text-white" },
-  terminal: { bg: "bg-gradient-to-br from-zinc-700 to-zinc-900", iconColor: "text-green-400" },
-  browser: { bg: "bg-gradient-to-br from-sky-400 to-blue-600", iconColor: "text-white" },
-  notes: { bg: "bg-gradient-to-br from-yellow-300 to-yellow-500", iconColor: "text-yellow-900" },
-  music: { bg: "bg-gradient-to-br from-pink-500 to-rose-600", iconColor: "text-white" },
-  chat: { bg: "bg-gradient-to-br from-emerald-400 to-teal-600", iconColor: "text-white" },
-  calculator: { bg: "bg-gradient-to-br from-gray-600 to-gray-800", iconColor: "text-white" },
-  photos: { bg: "bg-gradient-to-br from-purple-500 to-violet-600", iconColor: "text-white" },
-  settings: { bg: "bg-gradient-to-br from-slate-500 to-slate-700", iconColor: "text-white" },
+// Wallpaper themes for different users
+const wallpaperThemes = [
+  { name: "aurora", colors: ["hsl(180, 100%, 30%)", "hsl(280, 100%, 25%)", "hsl(200, 100%, 40%)", "hsl(320, 80%, 30%)"] },
+  { name: "sunset", colors: ["hsl(20, 100%, 40%)", "hsl(350, 100%, 35%)", "hsl(280, 80%, 25%)", "hsl(40, 100%, 50%)"] },
+  { name: "ocean", colors: ["hsl(200, 100%, 35%)", "hsl(180, 100%, 30%)", "hsl(220, 80%, 25%)", "hsl(160, 100%, 40%)"] },
+  { name: "forest", colors: ["hsl(120, 60%, 25%)", "hsl(160, 80%, 30%)", "hsl(80, 70%, 35%)", "hsl(140, 100%, 20%)"] },
+  { name: "cosmic", colors: ["hsl(260, 100%, 25%)", "hsl(300, 100%, 30%)", "hsl(220, 80%, 35%)", "hsl(280, 100%, 40%)"] },
+  { name: "neon", colors: ["hsl(320, 100%, 45%)", "hsl(180, 100%, 50%)", "hsl(60, 100%, 50%)", "hsl(280, 100%, 50%)"] },
+];
+
+// Icon styling for realistic macOS/Windows style icons
+const iconStyles: Record<string, { bg: string; iconColor: string; shadow: string }> = {
+  files: { bg: "linear-gradient(145deg, #5AC8FA 0%, #007AFF 100%)", iconColor: "text-white", shadow: "0 8px 24px rgba(0, 122, 255, 0.4)" },
+  "code-editor": { bg: "linear-gradient(145deg, #5856D6 0%, #AF52DE 100%)", iconColor: "text-white", shadow: "0 8px 24px rgba(88, 86, 214, 0.4)" },
+  terminal: { bg: "linear-gradient(145deg, #1C1C1E 0%, #2C2C2E 100%)", iconColor: "text-green-400", shadow: "0 8px 24px rgba(0, 0, 0, 0.5)" },
+  browser: { bg: "linear-gradient(145deg, #34AADC 0%, #5856D6 100%)", iconColor: "text-white", shadow: "0 8px 24px rgba(52, 170, 220, 0.4)" },
+  notes: { bg: "linear-gradient(145deg, #FFCC00 0%, #FF9500 100%)", iconColor: "text-amber-900", shadow: "0 8px 24px rgba(255, 149, 0, 0.4)" },
+  music: { bg: "linear-gradient(145deg, #FF2D55 0%, #FF3B30 100%)", iconColor: "text-white", shadow: "0 8px 24px rgba(255, 45, 85, 0.4)" },
+  chat: { bg: "linear-gradient(145deg, #34C759 0%, #30D158 100%)", iconColor: "text-white", shadow: "0 8px 24px rgba(52, 199, 89, 0.4)" },
+  calculator: { bg: "linear-gradient(145deg, #48484A 0%, #1C1C1E 100%)", iconColor: "text-orange-400", shadow: "0 8px 24px rgba(0, 0, 0, 0.5)" },
+  photos: { bg: "linear-gradient(145deg, #FF9500 0%, #FF2D55 50%, #AF52DE 100%)", iconColor: "text-white", shadow: "0 8px 24px rgba(175, 82, 222, 0.4)" },
+  settings: { bg: "linear-gradient(145deg, #8E8E93 0%, #636366 100%)", iconColor: "text-white", shadow: "0 8px 24px rgba(99, 99, 102, 0.4)" },
 };
 
 const desktopIcons = [
-  { id: "files", name: "Files", icon: Folder },
-  { id: "code-editor", name: "Code Editor", icon: Code },
+  { id: "files", name: "Finder", icon: Folder },
+  { id: "code-editor", name: "Code", icon: Code },
   { id: "terminal", name: "Terminal", icon: Terminal },
-  { id: "browser", name: "Browser", icon: Globe },
+  { id: "browser", name: "Safari", icon: Globe },
   { id: "notes", name: "Notes", icon: FileText },
   { id: "music", name: "Music", icon: Music },
   { id: "photos", name: "Photos", icon: Image },
-  { id: "chat", name: "Chat", icon: MessageSquare },
+  { id: "chat", name: "Messages", icon: MessageSquare },
   { id: "calculator", name: "Calculator", icon: Calculator },
   { id: "settings", name: "Settings", icon: Settings },
 ];
@@ -55,7 +65,17 @@ const Desktop = () => {
   const [activeWindow, setActiveWindow] = useState<string | null>(null);
   const [time, setTime] = useState(new Date());
   const [user, setUser] = useState<any>(null);
+  const [wallpaper, setWallpaper] = useState(wallpaperThemes[0]);
   const navigate = useNavigate();
+
+  // Set random wallpaper based on user ID for consistency
+  useEffect(() => {
+    if (user?.id) {
+      const hash = user.id.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+      const themeIndex = hash % wallpaperThemes.length;
+      setWallpaper(wallpaperThemes[themeIndex]);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -202,81 +222,100 @@ const Desktop = () => {
 
   return (
     <div className="h-screen w-screen overflow-hidden relative">
-      {/* Neon Gradient Background */}
+      {/* Live Animated Wallpaper */}
       <div 
-        className="absolute inset-0"
+        className="absolute inset-0 transition-all duration-1000"
         style={{
           background: `
-            radial-gradient(ellipse at 20% 20%, hsl(280, 100%, 25%) 0%, transparent 50%),
-            radial-gradient(ellipse at 80% 20%, hsl(200, 100%, 30%) 0%, transparent 50%),
-            radial-gradient(ellipse at 40% 80%, hsl(320, 100%, 20%) 0%, transparent 50%),
-            radial-gradient(ellipse at 90% 70%, hsl(260, 100%, 20%) 0%, transparent 40%),
-            linear-gradient(180deg, hsl(250, 50%, 8%) 0%, hsl(260, 40%, 5%) 100%)
+            radial-gradient(ellipse at 20% 20%, ${wallpaper.colors[0]} 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 20%, ${wallpaper.colors[1]} 0%, transparent 50%),
+            radial-gradient(ellipse at 40% 80%, ${wallpaper.colors[2]} 0%, transparent 50%),
+            radial-gradient(ellipse at 90% 70%, ${wallpaper.colors[3]} 0%, transparent 40%),
+            linear-gradient(180deg, hsl(250, 50%, 8%) 0%, hsl(260, 40%, 3%) 100%)
           `,
         }}
       />
       
-      {/* Animated Glow Orbs */}
+      {/* Animated Flowing Orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div 
-          className="absolute w-96 h-96 rounded-full blur-3xl opacity-30 animate-pulse"
+          className="absolute w-[600px] h-[600px] rounded-full blur-[120px] opacity-40"
           style={{ 
-            background: "radial-gradient(circle, hsl(280, 100%, 50%), transparent 70%)",
-            top: "10%", 
-            left: "5%",
-            animation: "pulse 4s ease-in-out infinite"
+            background: `radial-gradient(circle, ${wallpaper.colors[0]}, transparent 70%)`,
+            top: "5%", 
+            left: "-5%",
+            animation: "float 15s ease-in-out infinite"
           }}
         />
         <div 
-          className="absolute w-80 h-80 rounded-full blur-3xl opacity-25"
+          className="absolute w-[500px] h-[500px] rounded-full blur-[100px] opacity-35"
           style={{ 
-            background: "radial-gradient(circle, hsl(180, 100%, 50%), transparent 70%)",
-            top: "60%", 
-            right: "10%",
-            animation: "pulse 5s ease-in-out infinite 1s"
+            background: `radial-gradient(circle, ${wallpaper.colors[1]}, transparent 70%)`,
+            top: "50%", 
+            right: "-5%",
+            animation: "float-reverse 18s ease-in-out infinite"
           }}
         />
         <div 
-          className="absolute w-64 h-64 rounded-full blur-3xl opacity-20"
+          className="absolute w-[400px] h-[400px] rounded-full blur-[80px] opacity-30"
           style={{ 
-            background: "radial-gradient(circle, hsl(320, 100%, 50%), transparent 70%)",
-            bottom: "20%", 
-            left: "40%",
-            animation: "pulse 6s ease-in-out infinite 2s"
+            background: `radial-gradient(circle, ${wallpaper.colors[2]}, transparent 70%)`,
+            bottom: "10%", 
+            left: "30%",
+            animation: "float 20s ease-in-out infinite 2s"
+          }}
+        />
+        <div 
+          className="absolute w-[300px] h-[300px] rounded-full blur-[60px] opacity-25"
+          style={{ 
+            background: `radial-gradient(circle, ${wallpaper.colors[3]}, transparent 70%)`,
+            top: "30%", 
+            left: "60%",
+            animation: "float-reverse 12s ease-in-out infinite 1s"
           }}
         />
       </div>
 
-      {/* Grid Background */}
+      {/* Subtle noise texture overlay */}
       <div 
-        className="absolute inset-0 opacity-15"
+        className="absolute inset-0 opacity-[0.03] pointer-events-none"
         style={{
-          backgroundImage: `linear-gradient(hsl(var(--primary) / 0.4) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary) / 0.4) 1px, transparent 1px)`,
-          backgroundSize: "60px 60px",
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
         }}
       />
 
-      {/* Desktop Icons */}
-      <div className="absolute top-4 left-4 grid grid-cols-1 gap-3 z-10">
+      {/* Desktop Icons - Realistic macOS/iOS style */}
+      <div className="absolute top-6 left-6 grid grid-cols-1 gap-4 z-10">
         {desktopIcons.map(({ id, name, icon: Icon }) => {
-          const style = iconStyles[id] || { bg: "bg-primary", iconColor: "text-primary-foreground" };
+          const style = iconStyles[id] || { bg: "linear-gradient(145deg, #5856D6, #AF52DE)", iconColor: "text-white", shadow: "0 8px 24px rgba(88, 86, 214, 0.4)" };
           return (
             <button
               key={id}
               onClick={() => openWindow(id, name, <Icon className="w-4 h-4" />)}
-              className="group flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 transition-all"
+              className="group flex flex-col items-center gap-2 p-2 rounded-xl hover:bg-white/10 transition-all duration-200"
             >
               <div 
-                className={`w-14 h-14 rounded-2xl ${style.bg} flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:shadow-xl transition-all duration-200`}
+                className="w-16 h-16 rounded-[18px] flex items-center justify-center group-hover:scale-105 transition-all duration-300 relative overflow-hidden"
                 style={{ 
-                  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)"
+                  background: style.bg,
+                  boxShadow: `${style.shadow}, inset 0 1px 0 rgba(255, 255, 255, 0.25), inset 0 -1px 0 rgba(0, 0, 0, 0.1)`
                 }}
               >
-                <Icon className={`w-7 h-7 ${style.iconColor} drop-shadow-sm`} />
+                {/* Glossy highlight overlay */}
+                <div 
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: "linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 50%)",
+                    borderRadius: "inherit"
+                  }}
+                />
+                <Icon className={`w-8 h-8 ${style.iconColor} drop-shadow-md relative z-10`} strokeWidth={1.5} />
               </div>
               <span 
-                className="text-xs text-white font-medium px-2 py-0.5 rounded bg-black/40 backdrop-blur-sm"
-                style={{ textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)" }}
+                className="text-[11px] text-white font-medium px-1.5 py-0.5 rounded-md max-w-[70px] truncate"
+                style={{ 
+                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 0, 0, 0.5)"
+                }}
               >
                 {name}
               </span>
