@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   Folder, FileText, Terminal, Settings, Image, Music, 
   Globe, Calculator, Clock, Wifi, Battery, 
-  Volume2, X, Minus, Square, Search, Code, MessageSquare, LogOut
+  Volume2, X, Minus, Square, Search, Code, MessageSquare, LogOut, User
 } from "lucide-react";
 import { CodeEditor } from "@/components/desktop/CodeEditor";
 import { FileManager } from "@/components/desktop/FileManager";
@@ -130,6 +130,7 @@ const Desktop = () => {
   const [activeWindow, setActiveWindow] = useState<string | null>(null);
   const [time, setTime] = useState(new Date());
   const [user, setUser] = useState<any>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [wallpaper, setWallpaper] = useState(wallpaperThemes[0]);
   
   // Dragging state for windows
@@ -155,6 +156,22 @@ const Desktop = () => {
       const themeIndex = hash % wallpaperThemes.length;
       setWallpaper(wallpaperThemes[themeIndex]);
     }
+  }, [user?.id]);
+
+  // Fetch user avatar from profile
+  useEffect(() => {
+    const fetchAvatar = async () => {
+      if (!user?.id) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data?.avatar_url) {
+        setAvatarUrl(data.avatar_url);
+      }
+    };
+    fetchAvatar();
   }, [user?.id]);
 
   useEffect(() => {
@@ -503,6 +520,13 @@ const Desktop = () => {
           <button onClick={handleLogout} className="w-10 h-10 rounded-lg bg-card/50 border border-border/50 flex items-center justify-center hover:bg-destructive/20 transition-all">
             <LogOut className="w-4 h-4 text-muted-foreground" />
           </button>
+          <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-primary/50 bg-muted flex items-center justify-center">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <User className="w-4 h-4 text-muted-foreground" />
+            )}
+          </div>
         </div>
 
         <div className="flex-1 flex items-center justify-center gap-2">
