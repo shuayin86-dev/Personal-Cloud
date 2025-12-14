@@ -1,0 +1,220 @@
+import { useState, useEffect, useRef } from "react";
+import { X, User, Upload, Loader2, Mail, Calendar } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface ProfileModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [createdAt, setCreatedAt] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchProfile();
+    }
+  }, [isOpen]);
+
+  const fetchProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    setEmail(user.email || "");
+    setCreatedAt(user.created_at || "");
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("username, avatar_url")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (data) {
+      setUsername(data.username || "");
+      setAvatarUrl(data.avatar_url);
+    }
+  };
+
+  const updateProfile = async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ username, updated_at: new Date().toISOString() })
+      .eq("user_id", user.id);
+
+    setLoading(false);
+    if (error) {
+      toast.error("Failed to update profile");
+    } else {
+      toast.success("Profile updated!");
+    }
+  };
+
+  const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be less than 2MB");
+      return;
+    }
+
+    setUploading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setUploading(false);
+      return;
+    }
+
+    const fileExt = file.name.split(".").pop();
+    const filePath = `${user.id}/avatar.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("user-photos")
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      setUploading(false);
+      toast.error("Failed to upload avatar");
+      return;
+    }
+
+    const { data: publicData } = supabase.storage
+      .from("user-photos")
+      .getPublicUrl(filePath);
+
+    const avatarUrlWithTimestamp = `${publicData.publicUrl}?t=${Date.now()}`;
+
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ avatar_url: avatarUrlWithTimestamp, updated_at: new Date().toISOString() })
+      .eq("user_id", user.id);
+
+    setUploading(false);
+    if (updateError) {
+      toast.error("Failed to update avatar");
+    } else {
+      setAvatarUrl(avatarUrlWithTimestamp);
+      toast.success("Avatar updated!");
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className="relative w-full max-w-md mx-4 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="relative h-24 bg-gradient-to-br from-primary via-primary/80 to-primary/50">
+          <button 
+            onClick={onClose}
+            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/40 flex items-center justify-center transition-colors"
+          >
+            <X className="w-4 h-4 text-white" />
+          </button>
+        </div>
+
+        {/* Avatar */}
+        <div className="flex justify-center -mt-12">
+          <div 
+            className="relative w-24 h-24 rounded-full bg-muted border-4 border-card flex items-center justify-center overflow-hidden cursor-pointer group shadow-xl"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <User className="w-10 h-10 text-muted-foreground" />
+            )}
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              {uploading ? (
+                <Loader2 className="w-6 h-6 text-white animate-spin" />
+              ) : (
+                <Upload className="w-6 h-6 text-white" />
+              )}
+            </div>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={uploadAvatar}
+            className="hidden"
+          />
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-4">
+          {/* Username */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Username</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter username"
+              className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </div>
+
+          {/* Email (read-only) */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground flex items-center gap-2">
+              <Mail className="w-4 h-4 text-muted-foreground" />
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              readOnly
+              className="w-full px-4 py-2.5 bg-muted border border-border rounded-lg text-muted-foreground text-sm cursor-not-allowed"
+            />
+          </div>
+
+          {/* Member since */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Calendar className="w-4 h-4" />
+            <span>Member since {new Date(createdAt).toLocaleDateString([], { month: "long", year: "numeric" })}</span>
+          </div>
+
+          {/* Save Button */}
+          <button
+            onClick={updateProfile}
+            disabled={loading}
+            className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              "Save Changes"
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
