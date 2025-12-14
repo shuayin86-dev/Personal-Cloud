@@ -4,16 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   Folder, FileText, Terminal, Settings, Image, Music, 
   Globe, Calculator, Clock, Wifi, Battery, 
-  Volume2, X, Minus, Square, Search, Code, MessageSquare, LogOut, User
+  Volume2, X, Minus, Square, Search, Code, Cloud, LogOut, User
 } from "lucide-react";
 import { CodeEditor } from "@/components/desktop/CodeEditor";
 import { FileManager } from "@/components/desktop/FileManager";
 import { MusicPlayer } from "@/components/desktop/MusicPlayer";
-import { GroupChat } from "@/components/desktop/GroupChat";
+import { CloudChat } from "@/components/desktop/CloudChat";
 import { PhotoGallery } from "@/components/desktop/PhotoGallery";
 import { InteractiveTerminal } from "@/components/desktop/InteractiveTerminal";
 import { SettingsPanel } from "@/components/desktop/SettingsPanel";
 import { Calculator as CalculatorApp } from "@/components/desktop/Calculator";
+import { NotesApp } from "@/components/desktop/NotesApp";
+import { ProfileModal } from "@/components/desktop/ProfileModal";
 
 interface Window {
   id: string;
@@ -120,7 +122,7 @@ const desktopIcons = [
   { id: "notes", name: "Notes", icon: FileText },
   { id: "music", name: "Music", icon: Music },
   { id: "photos", name: "Photos", icon: Image },
-  { id: "chat", name: "Messages", icon: MessageSquare },
+  { id: "chat", name: "Cloud Chat", icon: Cloud },
   { id: "calculator", name: "Calculator", icon: Calculator },
   { id: "settings", name: "Settings", icon: Settings },
 ];
@@ -132,6 +134,7 @@ const Desktop = () => {
   const [user, setUser] = useState<any>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [wallpaper, setWallpaper] = useState(wallpaperThemes[0]);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   
   // Dragging state for windows
   const [draggingWindow, setDraggingWindow] = useState<string | null>(null);
@@ -290,7 +293,7 @@ const Desktop = () => {
       case "music":
         return <MusicPlayer />;
       case "chat":
-        return <GroupChat />;
+        return <CloudChat />;
       case "photos":
         return <PhotoGallery />;
       case "terminal":
@@ -310,14 +313,7 @@ const Desktop = () => {
           </div>
         );
       case "notes":
-        return (
-          <div className="h-full bg-background p-4">
-            <textarea 
-              className="w-full h-full bg-transparent border-none outline-none resize-none text-foreground placeholder:text-muted-foreground"
-              placeholder="Start typing your notes..."
-            />
-          </div>
-        );
+        return <NotesApp />;
       case "calculator":
         return <CalculatorApp />;
       case "settings":
@@ -520,13 +516,16 @@ const Desktop = () => {
           <button onClick={handleLogout} className="w-10 h-10 rounded-lg bg-card/50 border border-border/50 flex items-center justify-center hover:bg-destructive/20 transition-all">
             <LogOut className="w-4 h-4 text-muted-foreground" />
           </button>
-          <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-primary/50 bg-muted flex items-center justify-center">
+          <button 
+            onClick={() => setProfileModalOpen(true)}
+            className="w-8 h-8 rounded-full overflow-hidden border-2 border-primary/50 bg-muted flex items-center justify-center hover:border-primary transition-colors cursor-pointer"
+          >
             {avatarUrl ? (
               <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
               <User className="w-4 h-4 text-muted-foreground" />
             )}
-          </div>
+          </button>
         </div>
 
         <div className="flex-1 flex items-center justify-center gap-2">
@@ -559,6 +558,12 @@ const Desktop = () => {
           </div>
         </div>
       </div>
+
+      {/* Profile Modal */}
+      <ProfileModal 
+        isOpen={profileModalOpen} 
+        onClose={() => setProfileModalOpen(false)} 
+      />
     </div>
   );
 };
