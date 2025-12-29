@@ -35,30 +35,92 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
     const userQ = query.trim();
     setLoading(true);
 
+    // Use EventSource streaming via GET to /api/anon-ai?stream=1
+    // Append initial user message and an empty response slot to be filled incrementally.
+    setResponses((r) => [...r, `You: ${userQ}`, `Anon Ai (defensive): `]);
+    const responseIndex = (responses.length) + 1; // index of the response to update
+
+    // Build URL with encoded params
+    const params = new URLSearchParams();
+    params.set('stream', '1');
+    params.set('model', model);
+    params.set('temperature', String(temperature));
+    params.set('prompt', userQ);
+    const url = `/api/anon-ai?${params.toString()}`;
+
+    let es: EventSource | null = null;
     try {
-      const res = await fetch("/api/anon-ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: userQ, sophistication, model, temperature }),
+      es = new EventSource(url);
+      let buffer = '';
+      es.onmessage = (ev) => {
+        try {
+          const payload = JSON.parse(ev.data || '{}');
+          const chunk = payload?.chunk || '';
+          if (chunk) {
+            buffer += chunk;
+            // update the last response in state
+            setResponses((prev) => {
+              const copy = [...prev];
+              copy[responseIndex] = `Anon Ai (defensive): ${buffer}`;
+              return copy;
+            });
+          }
+        } catch (err) {
+          // non-json payload — append raw
+          buffer += ev.data;
+          setResponses((prev) => {
+            const copy = [...prev];
+            copy[responseIndex] = `Anon Ai (defensive): ${buffer}`;
+            return copy;
+          });
+        }
+      };
+      es.addEventListener('done', () => {
+        setLoading(false);
+        es?.close();
+        es = null;
       });
-
-      let text = "";
-      try {
-        const data = await res.json();
-        text = data?.text || data?.response || JSON.stringify(data);
-      } catch (e) {
-        text = await res.text();
-      }
-
-      // Prefix to enforce defensive guidance in UI.
-      const safeResp = `Anon Ai (defensive): ${text}`;
-      setResponses((r) => [...r, `You: ${userQ}`, safeResp]);
+      es.onerror = (err) => {
+        setLoading(false);
+        es?.close();
+        es = null;
+        setResponses((r) => {
+          const copy = [...r];
+          copy[responseIndex] = (copy[responseIndex] || '') + '\n\n[Stream error]';
+          return copy;
+        });
+      };
     } catch (err) {
-      const safeResponse = `Anon Ai (defensive): I can help with defensive cybersecurity tasks — recommend tooling and workflows for auditing, suggest safe log-analysis approaches, and outline forensic data collection best practices. You asked: "${userQ}"`;
-      setResponses((r) => [...r, `You: ${userQ}`, safeResponse]);
+      // fallback: non-streaming POST
+      try {
+        const res = await fetch('/api/anon-ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: userQ, sophistication, model, temperature }),
+        });
+        let text = '';
+        try {
+          const data = await res.json();
+          text = data?.text || data?.response || JSON.stringify(data);
+        } catch (e) {
+          text = await res.text();
+        }
+        setResponses((r) => {
+          const copy = [...r];
+          copy[responseIndex] = `Anon Ai (defensive): ${text}`;
+          return copy;
+        });
+      } catch (e) {
+        setResponses((r) => {
+          const copy = [...r];
+          copy[responseIndex] = `Anon Ai (defensive): I can help with defensive cybersecurity tasks — recommend tooling and workflows for auditing, suggest safe log-analysis approaches, and outline forensic data collection best practices. You asked: "${userQ}"`;
+          return copy;
+        });
+      } finally {
+        setLoading(false);
+      }
     } finally {
-      setLoading(false);
-      setQuery("");
+      setQuery('');
     }
   };
 
@@ -67,25 +129,102 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
     if (!query.trim()) return;
     const cmd = query.trim();
     setLoading(true);
+    // Stream terminal-like response via EventSource to /api/anon-ai?stream=1
+    let entryIndex = -1;
+    setTerminalHistory((prev) => {
+      entryIndex = prev.length;
+      return [...prev, { cmd, out: '' }];
+    });
+
+    const params = new URLSearchParams();
+    params.set('stream', '1');
+    params.set('model', model);
+    params.set('temperature', String(temperature));
+    const prompt = `Act AS A TERMINAL: emulate execution of the following command and output only the result (no extra commentary). Command: ${cmd}`;
+    params.set('prompt', prompt);
+    const url = `/api/anon-ai?${params.toString()}`;
+
+    let es: EventSource | null = null;
     try {
-      const res = await fetch("/api/anon-ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: `Act AS A TERMINAL: emulate execution of the following command and output only the result (no extra commentary). Command: ${cmd}`, sophistication, model, temperature }),
+      es = new EventSource(url);
+      let buffer = '';
+      es.onmessage = (ev) => {
+        try {
+          const payload = JSON.parse(ev.data || '{}');
+          const chunk = payload?.chunk || '';
+          if (chunk) {
+            buffer += chunk;
+            setTerminalHistory((prev) => {
+              const copy = [...prev];
+              if (entryIndex >= 0 && entryIndex < copy.length) {
+                copy[entryIndex] = { ...copy[entryIndex], out: buffer };
+              }
+              return copy;
+            });
+          }
+        } catch (err) {
+          buffer += ev.data;
+          setTerminalHistory((prev) => {
+            const copy = [...prev];
+            if (entryIndex >= 0 && entryIndex < copy.length) {
+              copy[entryIndex] = { ...copy[entryIndex], out: buffer };
+            }
+            return copy;
+          });
+        }
+      };
+      es.addEventListener('done', () => {
+        setLoading(false);
+        es?.close();
+        es = null;
       });
-      let text = "";
-      try {
-        const data = await res.json();
-        text = data?.text || data?.response || JSON.stringify(data);
-      } catch (e) {
-        text = await res.text();
-      }
-      setTerminalHistory((h) => [...h, { cmd, out: text }]);
+      es.onerror = (err) => {
+        setLoading(false);
+        es?.close();
+        es = null;
+        setTerminalHistory((prev) => {
+          const copy = [...prev];
+          if (entryIndex >= 0 && entryIndex < copy.length) {
+            copy[entryIndex] = { ...copy[entryIndex], out: (copy[entryIndex].out || '') + '\n\n[Stream error]' };
+          }
+          return copy;
+        });
+      };
     } catch (err) {
-      setTerminalHistory((h) => [...h, { cmd, out: "Error: backend unreachable" }]);
+      // fallback to POST
+      try {
+        const res = await fetch('/api/anon-ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, sophistication, model, temperature }),
+        });
+        let text = '';
+        try {
+          const data = await res.json();
+          text = data?.text || data?.response || JSON.stringify(data);
+        } catch (e) {
+          text = await res.text();
+        }
+        setTerminalHistory((prev) => {
+          const copy = [...prev];
+          if (entryIndex >= 0 && entryIndex < copy.length) {
+            copy[entryIndex] = { ...copy[entryIndex], out: text };
+          }
+          return copy;
+        });
+      } catch (e) {
+        setTerminalHistory((prev) => {
+          const copy = [...prev];
+          if (entryIndex >= 0 && entryIndex < copy.length) {
+            copy[entryIndex] = { ...copy[entryIndex], out: 'Error: backend unreachable' };
+          }
+          return copy;
+        });
+      } finally {
+        setLoading(false);
+      }
     } finally {
-      setLoading(false);
-      setQuery("");
+      setQuery('');
     }
   };
 

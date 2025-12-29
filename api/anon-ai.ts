@@ -1,24 +1,27 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
 // Simple Vercel-compatible serverless function that proxies to an LLM.
 // Environment variables expected:
 // - OPENAI_API_KEY or LLM_API_KEY
 // - OPENAI_MODEL (optional, default provided)
 
 export default async function handler(req: any, res: any) {
-  if (req.method !== 'POST') {
+  // Allow POST for normal requests and GET for simple streaming EventSource clients
+  if (req.method !== 'POST' && req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
 
-  const { prompt } = req.body || {};
+  // Accept prompt from body (POST) or query (GET EventSource)
+  const { prompt: bodyPrompt } = req.body || {};
+  const prompt = typeof bodyPrompt === 'string' && bodyPrompt
+    ? bodyPrompt
+    : (typeof req.query?.prompt === 'string' ? req.query.prompt : undefined);
   if (!prompt || typeof prompt !== 'string') {
     res.status(400).json({ error: 'Missing prompt' });
     return;
   }
 
   // Basic safety filter: refuse obviously malicious prompts
-  const blacklist = /(exploit|exploitative|attack|ddos|malware|rootkit|payload|crack|password cracking|bypass|unauthorized|phishing|sql injection|xss)/i;
+  const blacklist = /(exploit|exploitative|attack|ddos|malicious|rootkit|payload|rack|hacking|bypass|unauthorized|phishing|sql injection|xss)/i;
   if (blacklist.test(prompt)) {
     res.status(400).json({ error: 'Prompt contains disallowed content. This assistant only provides defensive, lawful guidance.' });
     return;

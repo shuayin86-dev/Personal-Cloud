@@ -1,5 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
+// Removed unused Vercel types import to avoid TS errors in local builds
 // Serverless proxy for CloudAi. Keeps safety filters in place and uses env keys.
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
