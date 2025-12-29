@@ -28,6 +28,7 @@ export default async function handler(req: any, res: any) {
   const model = req.body?.model || process.env.OPENAI_MODEL || 'gpt-4o-mini';
   const temperature = typeof req.body?.temperature === 'number' ? req.body.temperature : (process.env.OPENAI_TEMPERATURE ? Number(process.env.OPENAI_TEMPERATURE) : 0.2);
   const endpoint = process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions';
+  const wantStream = !!(req.body?.stream || req.query?.stream);
 
   if (!apiKey) {
     res.status(500).json({ error: 'No LLM API key configured (OPENAI_API_KEY or LLM_API_KEY).' });
@@ -35,18 +36,86 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
+    const systemMsg = {
+      role: 'system',
+      content:
+        'You are Anon Ai, a defensive cybersecurity assistant. Provide high-level, lawful, ethical guidance only. Refuse to provide steps that enable illegal activity, exploitation, or unauthorized access. Provide tool recommendations and defensive best practices.'
+    };
+
+    if (wantStream) {
+      // Stream via SSE to client
+      res.writeHead(200, {
+        Connection: 'keep-alive',
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        'Access-Control-Allow-Origin': '*',
+      });
+      res.write('\n');
+
+      const body = {
+        model,
+        messages: [systemMsg, { role: 'user', content: prompt }],
+        temperature,
+        stream: true,
+      } as any;
+
+      const upstream = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!upstream.ok || !upstream.body) {
+        const t = await upstream.text();
+        res.write(`data: ${JSON.stringify({ error: 'Upstream error', details: t })}\n\n`);
+        res.end();
+        return;
+      }
+
+      const reader = upstream.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buf = '';
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        if (value) {
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split(/\r?\n/);
+          buf = lines.pop() || '';
+          for (const line of lines) {
+            const trimmed = line.replace(/^data:\s*/, '');
+            if (!trimmed) continue;
+            if (trimmed === '[DONE]') {
+              res.write(`event: done\ndata: ${JSON.stringify({ done: true })}\n\n`);
+              res.end();
+              return;
+            }
+            try {
+              const parsed = JSON.parse(trimmed);
+              const chunk = parsed?.choices?.[0]?.delta?.content || parsed?.choices?.[0]?.text || '';
+              if (chunk) res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+            } catch (e) {
+              res.write(`data: ${JSON.stringify({ chunk: trimmed })}\n\n`);
+            }
+          }
+        }
+      }
+
+      // finalize
+      res.write(`event: done\ndata: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
+      return;
+    }
+
+    // non-stream path
     const body = {
       model,
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are Anon Ai, a defensive cybersecurity assistant. Provide high-level, lawful, ethical guidance only. Refuse to provide steps that enable illegal activity, exploitation, or unauthorized access. Provide tool recommendations and defensive best practices.'
-        },
-        { role: 'user', content: prompt }
-      ],
+      messages: [systemMsg, { role: 'user', content: prompt }],
       max_tokens: 800,
-      temperature: temperature,
+      temperature,
     };
 
     const r = await fetch(endpoint, {
@@ -65,7 +134,6 @@ export default async function handler(req: any, res: any) {
     }
 
     const data = await r.json();
-    // try to extract sensible text depending on provider
     let text = '';
     if (data.choices && Array.isArray(data.choices) && data.choices[0]) {
       const c = data.choices[0];
