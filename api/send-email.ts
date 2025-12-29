@@ -14,6 +14,28 @@ export default async function handler(req: any, res: any) {
     return;
   }
 
+  // Server-side validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (typeof name !== 'string' || name.trim().length === 0 || name.trim().length > 100) {
+    res.status(400).json({ error: 'Invalid name' });
+    return;
+  }
+  if (typeof email !== 'string' || !emailRegex.test(email)) {
+    res.status(400).json({ error: 'Invalid email' });
+    return;
+  }
+  if (typeof message !== 'string' || message.trim().length < 10 || message.trim().length > 5000) {
+    res.status(400).json({ error: 'Invalid message length' });
+    return;
+  }
+
+  // Basic content safety filter (avoid disallowed content)
+  const blacklist = /(exploit|exploitative|attack|ddos|rootkit|payload|crack|password cracking|bypass|unauthorized|phishing|sql injection|xss)/i;
+  if (blacklist.test(message) || blacklist.test(name)) {
+    res.status(400).json({ error: 'Message contains disallowed content' });
+    return;
+  }
+
   // Sender requested by user
   const fromAddress = process.env.SENDER_EMAIL || 'review@gmail.com';
 

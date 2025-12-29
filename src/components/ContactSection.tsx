@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export const ContactSection = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -49,12 +50,8 @@ export const ContactSection = () => {
         const preview = data?.preview ? data.preview : null;
         if (preview) {
           // Show a small preview card in the UI
-          toast({ title: 'Message sent (test)', description: 'Email sent via Ethereal — see preview below.' });
-          // Insert a preview link card below the form
-          const container = document.getElementById('contact-preview');
-          if (container) {
-            container.innerHTML = `\n              <div class="mt-4 p-3 rounded bg-card/80 border border-primary/30">\n                <div class="text-sm text-foreground font-medium">Ethereal preview</div>\n                <a class="text-primary text-sm underline" href="${preview}" target="_blank" rel="noreferrer">Open preview</a>\n              </div>`;
-          }
+          toast({ title: 'Message sent (test)', description: 'Email sent via Ethereal — preview available.' });
+          setPreviewUrl(preview);
         } else {
           toast({ title: 'Message sent!', description: `We'll get back to you as soon as possible!` });
         }
@@ -132,7 +129,24 @@ export const ContactSection = () => {
                 )}
               </Button>
             </form>
-            <div id="contact-preview" />
+            <div id="contact-preview">
+              {previewUrl && (
+                <div className="mt-4 p-3 rounded bg-card/80 border border-primary/30">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm text-foreground font-medium">Ethereal preview</div>
+                      <a className="text-primary text-sm underline" href={previewUrl} target="_blank" rel="noreferrer">Open preview</a>
+                    </div>
+                    <button
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => setPreviewUrl(null)}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </Card>
 
           {/* Contact Info */}
