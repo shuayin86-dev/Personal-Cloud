@@ -79,7 +79,7 @@ export const Footer = () => {
         {/* Bottom */}
         <div className="pt-8 border-t border-primary/20 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © 2024 CloudSpace. All rights reserved.
+            © 2026 CloudSpace. All rights reserved.
           </p>
           <p className="text-xs text-muted-foreground/70">
             Built with 💜 for the future
