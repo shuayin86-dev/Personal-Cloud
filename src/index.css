@@ -99,6 +99,27 @@ All colors MUST be HSL.
   }
 }
 
+/* Neon flash utility */
+.neon-flash {
+  animation: neon 1.5s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(99,102,241,0.6), 0 0 18px rgba(236,72,153,0.25);
+}
+
+.neon-border {
+  box-shadow: 0 0 18px rgba(99,102,241,0.12), 0 0 30px rgba(236,72,153,0.06) inset;
+}
+
+.neon-item {
+  border: 1px solid rgba(236,72,153,0.08);
+  box-shadow: 0 0 10px rgba(236,72,153,0.04);
+}
+
+@keyframes neon {
+  0% { box-shadow: 0 0 4px rgba(99,102,241,0.15); }
+  50% { box-shadow: 0 0 18px rgba(99,102,241,0.6), 0 0 28px rgba(236,72,153,0.35); }
+  100% { box-shadow: 0 0 4px rgba(99,102,241,0.15); }
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -251,4 +272,63 @@ All colors MUST be HSL.
                  0 0 30px hsl(var(--primary));
     transform: translate(0);
   }
+}
+
+/* Scoped neon styling — opt-in via `.neon-enabled` on a container */
+@layer base {
+  :root {
+    --neon-intensity: 0.6; /* 0..1, controls alpha of glows */
+    --neon-duration: 2.4s;
+  }
+
+  /* Use `.neon-enabled` to restrict neon effects to specific containers */
+  .neon-enabled {
+    animation: color-shift 12s linear infinite;
+  }
+
+  .neon-enabled .neon-flash,
+  .neon-enabled .neon-item,
+  .neon-enabled .bg-card,
+  .neon-enabled .card,
+  .neon-enabled .radix-dialog-content {
+    animation: neon var(--neon-duration) ease-in-out infinite;
+  }
+
+  .neon-enabled h1,
+  .neon-enabled h2,
+  .neon-enabled h3,
+  .neon-enabled h4,
+  .neon-enabled h5,
+  .neon-enabled h6,
+  .neon-enabled p,
+  .neon-enabled span,
+  .neon-enabled label {
+    animation: neon-flicker 3.5s linear infinite;
+    text-shadow: 0 0 6px rgba(99,102,241,var(--neon-intensity)), 0 0 12px rgba(236,72,153,calc(var(--neon-intensity) * 0.8));
+  }
+
+  .neon-enabled input,
+  .neon-enabled textarea,
+  .neon-enabled select,
+  .neon-enabled button {
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 8px rgba(99,102,241,calc(var(--neon-intensity) * 0.35)), inset 0 0 6px rgba(236,72,153,0.08);
+    transition: box-shadow 0.2s ease, transform 0.15s ease;
+  }
+
+  .neon-enabled button:hover,
+  .neon-enabled input:focus,
+  .neon-enabled textarea:focus {
+    box-shadow: 0 0 18px rgba(99,102,241,var(--neon-intensity)), 0 0 28px rgba(236,72,153,calc(var(--neon-intensity) * 0.6));
+    transform: translateY(-1px);
+  }
+
+  .neon-enabled .avatar img,
+  .neon-enabled .avatar,
+  .neon-enabled .lucide-react,
+  .neon-enabled svg {
+    filter: drop-shadow(0 0 6px rgba(99,102,241,var(--neon-intensity))) saturate(1.2) brightness(1.08);
+  }
+
+  /* Keep default text colors intact unless neon explicitly enabled */
 }

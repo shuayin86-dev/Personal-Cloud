@@ -6,9 +6,11 @@ import { toast } from "sonner";
 interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
+  points?: number;
+  activity?: string[];
 }
 
-export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
+export const ProfileModal = ({ isOpen, onClose, points = 0, activity = [] }: ProfileModalProps) => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -169,6 +171,26 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
 
         {/* Content */}
         <div className="p-6 space-y-4">
+          {/* Points & Activity */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Points</label>
+            <div className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground text-sm">{points}</div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Recent Activity</label>
+            <div className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground text-sm max-h-36 overflow-auto">
+              {activity.length === 0 ? (
+                <div className="text-muted-foreground text-sm">No recent activity</div>
+              ) : (
+                <ul className="list-disc list-inside space-y-1">
+                  {activity.map((a, i) => (
+                    <li key={i} className="text-sm text-foreground">{a}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
           {/* Username */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Username</label>
@@ -213,6 +235,33 @@ export const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
               "Save Changes"
             )}
           </button>
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={async () => {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return toast.error('Not logged in');
+                const { error } = await supabase.from('profiles').update({ points: 0 }).eq('user_id', user.id);
+                if (error) return toast.error('Failed to reset points');
+                toast.success('Points reset');
+              }}
+              className="flex-1 py-2 bg-black/80 text-white rounded-lg text-sm font-medium neon-flash"
+            >
+              Reset Points
+            </button>
+            <button
+              onClick={async () => {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return toast.error('Not logged in');
+                const { error } = await supabase.from('profiles').update({ is_admin: false }).eq('user_id', user.id);
+                if (error) return toast.error('Failed to revoke admin');
+                try { const stored = localStorage.getItem(`pc:user:${user.id}`); if (stored) { const p = JSON.parse(stored); p.isAdmin = false; localStorage.setItem(`pc:user:${user.id}`, JSON.stringify(p)); } } catch(e){}
+                toast.success('Admin revoked');
+              }}
+              className="flex-1 py-2 bg-black/80 text-white rounded-lg text-sm font-medium neon-flash"
+            >
+              Revoke Admin
+            </button>
+          </div>
         </div>
       </div>
     </div>

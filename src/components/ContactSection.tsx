@@ -18,7 +18,7 @@ export const ContactSection = () => {
       setIsSubmitting(false);
       toast({
         title: "Message sent!",
-        description: "We'll get back to you as soon as possible.",
+        description: "We'll get back to you as soon as possible!.",
       });
     }, 1000);
   };
@@ -66,7 +66,7 @@ export const ContactSection = () => {
                 <label className="text-sm font-medium text-foreground">Message</label>
                 <Textarea 
                   placeholder="Your message..." 
-                  rows={5}
+                  rows={7}
                   className="bg-background/50 border-primary/30 focus:border-primary resize-none"
                 />
               </div>
@@ -91,9 +91,9 @@ export const ContactSection = () => {
           {/* Contact Info */}
           <div className="space-y-6">
             {[
-              { icon: Mail, title: "Email", content: "hello@cloudspace.io" },
-              { icon: Phone, title: "Phone", content: "+1 (555) 123-4567" },
-              { icon: MapPin, title: "Location", content: "San Francisco, CA" },
+              { icon: Mail, title: "Email", content: "bobclein1@gmail.com" },
+              { icon: Phone, title: "Phone", content: "+221 76 388 5505 " },
+              { icon: MapPin, title: "Location", content: "Senegal - Dakar" },
             ].map((item, index) => {
               const Icon = item.icon;
               return (
@@ -127,7 +127,7 @@ export const ContactSection = () => {
                   className="w-12 h-12 mx-auto mb-2 text-primary/50"
                   style={{ filter: "drop-shadow(0 0 10px hsl(var(--primary)))" }}
                 />
-                <p className="text-muted-foreground text-sm">Interactive map coming soon</p>
+                <p className="text-muted-foreground text-sm">Interactive map coming soon!!</p>
               </div>
             </Card>
           </div>

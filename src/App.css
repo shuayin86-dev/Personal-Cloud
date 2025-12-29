@@ -40,3 +40,23 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Neon helpers used by AI modals and buttons */
+.neon-flash {
+  background-image: linear-gradient(90deg, rgba(255,0,150,0.06), rgba(120,80,255,0.06));
+  box-shadow: 0 6px 20px rgba(120,80,255,0.06), 0 0 30px rgba(255,0,150,0.03) inset;
+  border-color: rgba(180,120,255,0.12);
+}
+.neon-item {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(120,80,255,0.01));
+  box-shadow: 0 6px 28px rgba(120,80,255,0.06);
+}
+.neon-border {
+  box-shadow: 0 0 12px rgba(120,80,255,0.08);
+  border-color: rgba(180,120,255,0.18);
+}
+
+/* Stronger neon button look */
+.neon-glow {
+  box-shadow: 0 6px 30px rgba(120,80,255,0.14), 0 0 18px rgba(255,0,150,0.08);
+}
