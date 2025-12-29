@@ -1,5 +1,6 @@
 import { Zap } from "lucide-react";
 import { Github, Twitter, Linkedin } from "react-simple-icons";
+import Icon from "@/components/ui/Icon";
 
 const footerLinks = {
   Product: ["Features", "Pricing", "Security", "Enterprise"],
@@ -38,14 +39,14 @@ export const Footer = () => {
             </p>
             <div className="flex gap-3">
               {socialLinks.map((social, index) => {
-                const Icon = social.icon;
+                const IconComp = social.icon;
                 return (
                   <a
                     key={index}
                     href={social.href}
                     className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center hover:bg-primary/20 hover:border-primary/50 transition-all"
                   >
-                    <Icon className="w-4 h-4 text-primary" />
+                    <Icon icon={IconComp} size={16} className="text-primary" />
                   </a>
                 );
               })}
