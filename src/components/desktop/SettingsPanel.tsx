@@ -244,7 +244,7 @@ export const SettingsPanel = ({
             About
           </h3>
           <div className="bg-card rounded-lg p-4 space-y-2">
-            <p className="text-sm text-foreground">CloudSpace Desktop v1.0.0</p>
+            <p className="text-sm text-foreground">CloudSpace Desktop v2.0.0</p>
             <p className="text-xs text-muted-foreground">Your virtual desktop in the cloud</p>
           </div>
         </div>
