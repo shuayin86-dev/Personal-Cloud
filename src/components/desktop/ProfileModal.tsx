@@ -136,8 +136,8 @@ export const ProfileModal = ({ isOpen, onClose, points = 0, activity = [] }: Pro
         return toast.error('Not logged in');
       }
 
-      // upsert admin flag
-      const { error } = await supabase.from('profiles').upsert({ user_id: user.id, is_admin: true }, { returning: 'minimal' });
+      // upsert admin flag (use onConflict instead of unsupported 'returning' option)
+      const { error } = await supabase.from('profiles').upsert({ user_id: user.id, is_admin: true }, { onConflict: 'user_id' });
       setAdminLoading(false);
       if (error) {
         toast.error('Failed to set admin');
