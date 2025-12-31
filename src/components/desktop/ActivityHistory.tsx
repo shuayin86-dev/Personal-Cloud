@@ -8,8 +8,8 @@ export const ActivityHistory = ({ isOpen, onClose, userId }: { isOpen: boolean; 
   useEffect(() => {
     if (!isOpen || !userId) return;
     (async () => {
-      const { data } = await (supabase as any).from('user_activity').select('id, type, message, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(100);
-      setItems((data as any) || []);
+      const { data } = await supabase.from('user_activity').select('id, type, message, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(100);
+      setItems(Array.isArray(data) ? data : []);
     })();
   }, [isOpen, userId]);
 

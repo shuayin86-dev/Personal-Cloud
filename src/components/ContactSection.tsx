@@ -36,9 +36,15 @@ export const ContactSection = () => {
       setEmail('');
       setMessage('');
       toast({ title: 'Message sent!', description: "We'll get back to you as soon as possible!." });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Contact send failed', err);
-      toast({ title: 'Send failed', description: err?.message || 'Could not send message' });
+      const msg = err instanceof Error ? err.message : String(err ?? 'Could not send message');
+      let description = msg || 'Could not send message';
+      // If fetch couldn't connect to the dev proxy, show actionable guidance
+      if (/failed to fetch/i.test(description) || /ECONNREFUSED|connect/i.test(description)) {
+        description = 'Cannot reach API. Start the dev proxy with `npm run dev:proxy` and try again.';
+      }
+      toast({ title: 'Send failed', description });
     } finally {
       setIsSubmitting(false);
     }

@@ -21,11 +21,7 @@ export const FileManager = () => {
   const [createType, setCreateType] = useState<"file" | "folder">("file");
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchFiles();
-  }, [currentFolder]);
-
-  const fetchFiles = async () => {
+  const fetchFiles = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -38,7 +34,11 @@ export const FileManager = () => {
       .order("name");
 
     if (data) setFiles(data);
-  };
+  }, [currentFolder]);
+
+  useEffect(() => {
+    fetchFiles();
+  }, [fetchFiles]);
 
   const createItem = async () => {
     if (!newName.trim()) return;

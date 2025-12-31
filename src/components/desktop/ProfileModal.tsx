@@ -147,7 +147,7 @@ export const ProfileModal = ({ isOpen, onClose, points = 0, activity = [] }: Pro
           const p = stored ? JSON.parse(stored) : { points: 0 };
           p.isAdmin = true;
           localStorage.setItem(`pc:user:${user.id}`, JSON.stringify(p));
-        } catch (e) {}
+        } catch (e) { console.debug('ProfileModal: failed to persist admin flag locally', e); }
         toast.success('Admin login successful');
         setAdminLoginOpen(false);
       }
@@ -293,7 +293,7 @@ export const ProfileModal = ({ isOpen, onClose, points = 0, activity = [] }: Pro
                   if (!user) return toast.error('Not logged in');
                   const { error } = await supabase.from('profiles').update({ is_admin: false }).eq('user_id', user.id);
                   if (error) return toast.error('Failed to revoke admin');
-                  try { const stored = localStorage.getItem(`pc:user:${user.id}`); if (stored) { const p = JSON.parse(stored); p.isAdmin = false; localStorage.setItem(`pc:user:${user.id}`, JSON.stringify(p)); } } catch(e){}
+                  try { const stored = localStorage.getItem(`pc:user:${user.id}`); if (stored) { const p = JSON.parse(stored); p.isAdmin = false; localStorage.setItem(`pc:user:${user.id}`, JSON.stringify(p)); } } catch(e){ console.debug('ProfileModal: failed to update localStorage after revoke', e); }
                   toast.success('Admin revoked');
                 }}
                 className="flex-1 py-2 bg-black/80 text-white rounded-lg text-sm font-medium neon-flash"

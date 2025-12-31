@@ -18,36 +18,35 @@ export const MusicPlayer = () => {
   const animationRef = useRef<number>();
 
   useEffect(() => {
+    let rafId: number | undefined;
+    const loop = () => {
+      // Simulate audio visualization
+      setAnalyzerData((prev) => prev.map(() => Math.random() * 100));
+
+      setProgress((prev) => {
+        const newProgress = prev + 0.5;
+        if (newProgress >= 100) {
+          nextTrack();
+          return 0;
+        }
+        return newProgress;
+      });
+
+      rafId = requestAnimationFrame(loop);
+      animationRef.current = rafId;
+    };
+
     if (isPlaying) {
-      animationRef.current = requestAnimationFrame(animate);
+      rafId = requestAnimationFrame(loop);
+      animationRef.current = rafId;
     } else {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
     }
+
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
   }, [isPlaying]);
-
-  const animate = () => {
-    // Simulate audio visualization
-    const newData = analyzerData.map(() => Math.random() * 100);
-    setAnalyzerData(newData);
-    
-    setProgress((prev) => {
-      const newProgress = prev + 0.5;
-      if (newProgress >= 100) {
-        nextTrack();
-        return 0;
-      }
-      return newProgress;
-    });
-
-    animationRef.current = requestAnimationFrame(animate);
-  };
 
   const togglePlay = () => setIsPlaying(!isPlaying);
 

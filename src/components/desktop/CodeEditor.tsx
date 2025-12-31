@@ -17,11 +17,7 @@ export const CodeEditor = () => {
   const [newFileName, setNewFileName] = useState("");
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchFiles();
-  }, []);
-
-  const fetchFiles = async () => {
+  const fetchFiles = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -33,13 +29,16 @@ export const CodeEditor = () => {
       .order("created_at", { ascending: false });
 
     if (data) {
-      setFiles(data.map(f => ({ id: f.id, name: f.name, content: f.content || "" })));
-      if (data.length > 0 && !activeFile) {
-        setActiveFile({ id: data[0].id, name: data[0].name, content: data[0].content || "" });
-        setCode(data[0].content || "");
-      }
+      const mapped = data.map(f => ({ id: f.id, name: f.name, content: f.content || "" }));
+      setFiles(mapped);
+      setActiveFile(prev => prev ?? (mapped.length > 0 ? mapped[0] : null));
+      setCode(prev => prev || (mapped[0]?.content || ""));
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchFiles();
+  }, [fetchFiles]);
 
   const createFile = async () => {
     if (!newFileName.trim()) return;

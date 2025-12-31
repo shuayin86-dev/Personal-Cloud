@@ -41,7 +41,7 @@ interface IconPosition {
 // Wallpaper themes for different users
 const wallpaperThemes = [
   { name: "aurora", colors: ["hsl(180, 100%, 30%)", "hsl(280, 100%, 25%)", "hsl(200, 100%, 40%)", "hsl(320, 80%, 30%)"] },
-  { name: "sunset", colors: ["hsl(20, 100%, 40%)", "hsl(350, 100%, 35%)", "hsl(280, 80%, 25%)", "hsl(40, 100%, 50%)"] },
+  { name: "sunset", colors: ["rgba(204, 68, 0, 1)", "hsl(350, 100%, 35%)", "hsl(280, 80%, 25%)", "hsl(40, 100%, 50%)"] },
   { name: "ocean", colors: ["hsl(200, 100%, 35%)", "hsl(180, 100%, 30%)", "hsl(220, 80%, 25%)", "hsl(160, 100%, 40%)"] },
   { name: "forest", colors: ["hsl(120, 60%, 25%)", "hsl(160, 80%, 30%)", "hsl(80, 70%, 35%)", "hsl(140, 100%, 20%)"] },
   { name: "cosmic", colors: ["hsl(260, 100%, 25%)", "hsl(300, 100%, 30%)", "hsl(220, 80%, 35%)", "hsl(280, 100%, 40%)"] },
@@ -135,7 +135,8 @@ const Desktop = () => {
   const [windows, setWindows] = useState<Window[]>([]);
   const [activeWindow, setActiveWindow] = useState<string | null>(null);
   const [time, setTime] = useState(new Date());
-  const [user, setUser] = useState<any>(null);
+  type SupabaseUser = { id: string; email?: string | null; created_at?: string | null };
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [wallpaper, setWallpaper] = useState(wallpaperThemes[0]);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -182,18 +183,20 @@ const Desktop = () => {
       }
       // fetch is_admin in a separate call to reduce type issues
       try {
-        const resAny = await (supabase as any)
+        const res = await supabase
           .from("profiles")
           .select("is_admin")
           .eq("user_id", user.id)
           .maybeSingle();
-        const ai = resAny?.data?.is_admin;
+        // Use a safe typed cast (not `any`) to inspect `res.data` without tripping `no-explicit-any`.
+        const profileData = (res as unknown as { data?: { is_admin?: boolean } | null }).data ?? null;
+        const ai = profileData && typeof profileData === 'object' && 'is_admin' in profileData ? profileData.is_admin : undefined;
         if (typeof ai === 'boolean') {
           setIsAdmin(!!ai);
           return;
         }
       } catch (e) {
-        // ignore - table may not have is_admin column
+        console.debug('Desktop: error fetching is_admin', e);
       }
       // fallback to localStorage
       try {

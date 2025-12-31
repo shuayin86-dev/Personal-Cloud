@@ -83,7 +83,7 @@ export const InteractiveTerminal = ({ username = "user" }: InteractiveTerminalPr
           ],
         };
 
-      case "ls":
+      case "ls": {
         const lsPath = args[0] ? resolvePath(args[0]) : currentDir;
         const contents = fileSystem[lsPath];
         if (!contents) {
@@ -96,8 +96,9 @@ export const InteractiveTerminal = ({ username = "user" }: InteractiveTerminalPr
               : `📄 ${item}`
           ),
         };
+      }
 
-      case "cd":
+      case "cd": {
         if (!args[0] || args[0] === "~") {
           setCurrentDir("~");
           return { output: [] };
@@ -108,11 +109,12 @@ export const InteractiveTerminal = ({ username = "user" }: InteractiveTerminalPr
           return { output: [] };
         }
         return { output: [`cd: ${args[0]}: No such file or directory`], isError: true };
+      }
 
       case "pwd":
         return { output: [currentDir.replace("~", "/home/" + username)] };
 
-      case "cat":
+      case "cat": {
         if (!args[0]) {
           return { output: ["cat: missing file operand"], isError: true };
         }
@@ -122,6 +124,7 @@ export const InteractiveTerminal = ({ username = "user" }: InteractiveTerminalPr
           return { output: content.split("\n") };
         }
         return { output: [`cat: ${args[0]}: No such file or directory`], isError: true };
+      }
 
       case "echo":
         return { output: [args.join(" ")] };

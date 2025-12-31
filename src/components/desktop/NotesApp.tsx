@@ -16,11 +16,7 @@ export const NotesApp = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    fetchNotes();
-  }, []);
-
-  const fetchNotes = async () => {
+  const fetchNotes = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -34,12 +30,14 @@ export const NotesApp = () => {
       toast.error("Failed to load notes");
     } else {
       setNotes(data || []);
-      if (data && data.length > 0 && !selectedNote) {
-        setSelectedNote(data[0]);
-      }
+      setSelectedNote(prev => prev ?? (data && data.length > 0 ? data[0] : null));
     }
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchNotes();
+  }, [fetchNotes]);
 
   const createNote = async () => {
     const { data: { user } } = await supabase.auth.getUser();

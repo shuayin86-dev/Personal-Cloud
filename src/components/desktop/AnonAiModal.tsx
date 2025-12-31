@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 import {
   Dialog,
@@ -29,16 +29,21 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
   const startHeightRef = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const handleSend = async (e?: React.FormEvent) => {
+  // Refs to hold response indices for streaming updates (avoid depending on changing state)
+  const responseIndexRef = useRef<number>(-1);
+  const terminalEntryIndexRef = useRef<number>(-1);
+
+  const handleSend = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!query.trim()) return;
     const userQ = query.trim();
     setLoading(true);
 
-    // Use EventSource streaming via GET to /api/anon-ai?stream=1
-    // Append initial user message and an empty response slot to be filled incrementally.
-    setResponses((r) => [...r, `You: ${userQ}`, `Anon Ai (defensive): `]);
-    const responseIndex = (responses.length) + 1; // index of the response to update
+    // Append user message and reserve a slot for the streaming response. Use ref to track index.
+    setResponses((r) => {
+      responseIndexRef.current = r.length + 1;
+      return [...r, `You: ${userQ}`, `Anon Ai (defensive): `];
+    });
 
     // Build URL with encoded params
     const params = new URLSearchParams();
@@ -58,10 +63,10 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
           const chunk = payload?.chunk || '';
           if (chunk) {
             buffer += chunk;
-            // update the last response in state
+            // update the response slot using ref index
             setResponses((prev) => {
               const copy = [...prev];
-              copy[responseIndex] = `Anon Ai (defensive): ${buffer}`;
+              copy[responseIndexRef.current] = `Anon Ai (defensive): ${buffer}`;
               return copy;
             });
           }
@@ -70,7 +75,7 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
           buffer += ev.data;
           setResponses((prev) => {
             const copy = [...prev];
-            copy[responseIndex] = `Anon Ai (defensive): ${buffer}`;
+            copy[responseIndexRef.current] = `Anon Ai (defensive): ${buffer}`;
             return copy;
           });
         }
@@ -86,7 +91,7 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
         es = null;
         setResponses((r) => {
           const copy = [...r];
-          copy[responseIndex] = (copy[responseIndex] || '') + '\n\n[Stream error]';
+          copy[responseIndexRef.current] = (copy[responseIndexRef.current] || '') + '\n\n[Stream error]';
           return copy;
         });
       };
@@ -107,13 +112,13 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
         }
         setResponses((r) => {
           const copy = [...r];
-          copy[responseIndex] = `Anon Ai (defensive): ${text}`;
+          copy[responseIndexRef.current] = `Anon Ai (defensive): ${text}`;
           return copy;
         });
       } catch (e) {
         setResponses((r) => {
           const copy = [...r];
-          copy[responseIndex] = `Anon Ai (defensive): I can help with defensive cybersecurity tasks — recommend tooling and workflows for auditing, suggest safe log-analysis approaches, and outline forensic data collection best practices. You asked: "${userQ}"`;
+          copy[responseIndexRef.current] = `Anon Ai (defensive): I can help with defensive cybersecurity tasks — recommend tooling and workflows for auditing, suggest safe log-analysis approaches, and outline forensic data collection best practices. You asked: "${userQ}"`;
           return copy;
         });
       } finally {
@@ -122,17 +127,18 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
     } finally {
       setQuery('');
     }
-  };
+  }, [model, temperature, sophistication, query]);
 
-  const handleTerminalSend = async (e?: React.FormEvent) => {
+  const handleTerminalSend = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!query.trim()) return;
     const cmd = query.trim();
     setLoading(true);
-    // Stream terminal-like response via EventSource to /api/anon-ai?stream=1
-    let entryIndex = -1;
+
+    // Reserve terminal entry index via ref
+    terminalEntryIndexRef.current = -1;
     setTerminalHistory((prev) => {
-      entryIndex = prev.length;
+      terminalEntryIndexRef.current = prev.length;
       return [...prev, { cmd, out: '' }];
     });
 
@@ -156,8 +162,9 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
             buffer += chunk;
             setTerminalHistory((prev) => {
               const copy = [...prev];
-              if (entryIndex >= 0 && entryIndex < copy.length) {
-                copy[entryIndex] = { ...copy[entryIndex], out: buffer };
+              const idx = terminalEntryIndexRef.current;
+              if (idx >= 0 && idx < copy.length) {
+                copy[idx] = { ...copy[idx], out: buffer };
               }
               return copy;
             });
@@ -166,8 +173,9 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
           buffer += ev.data;
           setTerminalHistory((prev) => {
             const copy = [...prev];
-            if (entryIndex >= 0 && entryIndex < copy.length) {
-              copy[entryIndex] = { ...copy[entryIndex], out: buffer };
+            const idx = terminalEntryIndexRef.current;
+            if (idx >= 0 && idx < copy.length) {
+              copy[idx] = { ...copy[idx], out: buffer };
             }
             return copy;
           });
@@ -184,8 +192,9 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
         es = null;
         setTerminalHistory((prev) => {
           const copy = [...prev];
-          if (entryIndex >= 0 && entryIndex < copy.length) {
-            copy[entryIndex] = { ...copy[entryIndex], out: (copy[entryIndex].out || '') + '\n\n[Stream error]' };
+          const idx = terminalEntryIndexRef.current;
+          if (idx >= 0 && idx < copy.length) {
+            copy[idx] = { ...copy[idx], out: (copy[idx].out || '') + '\n\n[Stream error]' };
           }
           return copy;
         });
@@ -207,16 +216,18 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
         }
         setTerminalHistory((prev) => {
           const copy = [...prev];
-          if (entryIndex >= 0 && entryIndex < copy.length) {
-            copy[entryIndex] = { ...copy[entryIndex], out: text };
+          const idx = terminalEntryIndexRef.current;
+          if (idx >= 0 && idx < copy.length) {
+            copy[idx] = { ...copy[idx], out: text };
           }
           return copy;
         });
       } catch (e) {
         setTerminalHistory((prev) => {
           const copy = [...prev];
-          if (entryIndex >= 0 && entryIndex < copy.length) {
-            copy[entryIndex] = { ...copy[entryIndex], out: 'Error: backend unreachable' };
+          const idx = terminalEntryIndexRef.current;
+          if (idx >= 0 && idx < copy.length) {
+            copy[idx] = { ...copy[idx], out: 'Error: backend unreachable' };
           }
           return copy;
         });
@@ -226,7 +237,7 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
     } finally {
       setQuery('');
     }
-  };
+  }, [model, temperature, sophistication, query]);
 
   // Drag handlers for adjustable split
   useEffect(() => {
@@ -265,7 +276,7 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen, terminalMode, query]);
+  }, [isOpen, terminalMode, query, handleSend, handleTerminalSend, onClose]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>

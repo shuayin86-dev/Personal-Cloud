@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Send, Check, CheckCheck, Cloud, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -34,6 +34,54 @@ export const CloudChat = () => {
   const [cloudAiOpen, setCloudAiOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  interface ProfileRow { points?: number; is_admin?: boolean }
+
+  const fetchUser = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      // load server-side profile (points + is_admin) if available, fallback to localStorage
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("points, is_admin")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const stored = localStorage.getItem(`pc:user:${user.id}`);
+      const parsed = stored ? JSON.parse(stored) : null;
+      const profileSafe = profile && typeof profile === "object" ? (profile as ProfileRow) : null;
+      setCurrentUser({
+        id: user.id,
+        email: user.email || "Anonymous",
+        points: (profileSafe && typeof profileSafe.points === "number") ? profileSafe.points : (parsed?.points || 0),
+        isAdmin: (profileSafe && !!profileSafe.is_admin) || parsed?.isAdmin || false,
+      });
+    }
+  }, []);
+
+  const fetchMessages = useCallback(async () => {
+    const { data } = await supabase
+      .from("chat_messages")
+      .select("*, profiles(avatar_url)")
+      .eq("room", "general")
+      .order("created_at", { ascending: true })
+      .limit(100);
+
+    if (Array.isArray(data)) {
+      const mapped: Message[] = data.map((d) => {
+        const profilesObj = d?.profiles && typeof d.profiles === 'object' ? d.profiles as { avatar_url?: string | null } : null;
+        return {
+          id: d.id,
+          username: d.username,
+          message: d.message,
+          created_at: d.created_at,
+          user_id: d.user_id,
+          profiles: profilesObj && typeof profilesObj.avatar_url === 'string' ? { avatar_url: profilesObj.avatar_url } : null,
+        };
+      });
+
+      setMessages(mapped);
+    }
+  }, []);
+
   useEffect(() => {
     fetchUser();
     fetchMessages();
@@ -51,16 +99,15 @@ export const CloudChat = () => {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "chat_messages" },
         (payload) => {
-          const n: any = payload.new;
+          const n = payload.new;
+          const profileObj = n?.profiles && typeof n.profiles === 'object' ? n.profiles as { avatar_url?: string | null } : null;
           const safeMsg: Message = {
             id: n.id,
             username: n.username,
             message: n.message,
             created_at: n.created_at,
             user_id: n.user_id,
-            profiles: n?.profiles && typeof n.profiles === 'object' && 'avatar_url' in n.profiles
-              ? { avatar_url: n.profiles.avatar_url }
-              : null,
+            profiles: profileObj && typeof profileObj.avatar_url === 'string' ? { avatar_url: profileObj.avatar_url } : null,
           };
           setMessages((prev) => [...prev, safeMsg]);
         }
@@ -83,70 +130,35 @@ export const CloudChat = () => {
       })
         .on("presence", { event: "sync" }, () => {
         const newState = channel.presenceState();
+        // Normalize presence entries: some backends use `user_id`, others use `presence_ref` for guests.
         const users = Object.values(newState)
-          .map((p: any) => (Array.isArray(p) && p[0] ? (p[0] as { user_id: string }) : null))
-          .filter(Boolean) as Array<{ user_id: string }>;
+          .flatMap((p) => (Array.isArray(p) ? p : []))
+          .map((entry) => {
+            const e = entry as unknown as { user_id?: string; presence_ref?: string };
+            if (typeof e.user_id === 'string') return { user_id: e.user_id };
+            if (typeof e.presence_ref === 'string') return { user_id: e.presence_ref };
+            return null;
+          })
+          .filter((u): u is { user_id: string } => u !== null);
         setOnlineUsers(users);
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          await channel.track({ user_id: currentUser?.id });
+          // Accept either a user_id or a presence_ref; provide a small union type to satisfy TypeScript
+          type TrackPayload = { user_id: string } | { presence_ref: string };
+          if (currentUser?.id) {
+            await channel.track({ user_id: currentUser.id } as TrackPayload);
+          } else {
+            const presencePayload: TrackPayload = { presence_ref: `guest-${Date.now()}` };
+            await channel.track(presencePayload);
+          }
         }
       });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentUser]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const fetchUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      // load server-side profile (points + is_admin) if available, fallback to localStorage
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("points, is_admin")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      const stored = localStorage.getItem(`pc:user:${user.id}`);
-      const parsed = stored ? JSON.parse(stored) : null;
-      const profileSafe = profile && typeof profile === "object" ? (profile as any) : null;
-      setCurrentUser({
-        id: user.id,
-        email: user.email || "Anonymous",
-        points: (profileSafe && typeof profileSafe.points === "number") ? profileSafe.points : (parsed?.points || 0),
-        isAdmin: (profileSafe && !!profileSafe.is_admin) || parsed?.isAdmin || false,
-      });
-    }
-  };
-
-  const fetchMessages = async () => {
-    const { data } = await supabase
-      .from("chat_messages")
-      .select("*, profiles(avatar_url)")
-      .eq("room", "general")
-      .order("created_at", { ascending: true })
-      .limit(100);
-
-    if (data) {
-      const mapped: Message[] = (data as any[]).map((d) => ({
-        id: d.id,
-        username: d.username,
-        message: d.message,
-        created_at: d.created_at,
-        user_id: d.user_id,
-        profiles: d?.profiles && typeof d.profiles === 'object' && 'avatar_url' in d.profiles
-          ? { avatar_url: d.profiles.avatar_url }
-          : null,
-      }));
-
-      setMessages(mapped);
-    }
-  };
+  }, [currentUser, fetchUser, fetchMessages]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,6 +186,9 @@ export const CloudChat = () => {
       });
       // record activity server-side (best-effort)
       try {
+        // Best-effort activity logging: the typed Supabase client may not include this table.
+        // Use a runtime cast to avoid TypeScript errors when 'user_activity' is not present in the generated types.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (supabase as any).from('user_activity').insert({
           user_id: currentUser.id,
           type: 'message',
@@ -212,7 +227,7 @@ export const CloudChat = () => {
         }
       } else {
         // create a guest admin session (demo only)
-        const guest = { id: "guest-admin", email: "admin@local", points: 0, isAdmin: true } as any;
+        const guest = { id: "guest-admin", email: "admin@local", points: 0, isAdmin: true };
         setCurrentUser(guest);
         try {
           localStorage.setItem(`pc:guest-admin`, JSON.stringify(guest));

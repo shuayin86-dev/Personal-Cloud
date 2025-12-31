@@ -1,6 +1,7 @@
+import type { Request, Response } from 'express';
 // Removed unused Vercel types import to avoid TS errors in local builds
 // Serverless proxy for CloudAi. Keeps safety filters in place and uses env keys.
-export default async function handler(req: any, res: any) {
+export default async function handler(req: Request, res: Response) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
@@ -67,7 +68,8 @@ export default async function handler(req: any, res: any) {
     }
 
     res.status(200).json({ text });
-  } catch (err: any) {
-    res.status(500).json({ error: 'Proxy failed', details: err?.message || String(err) });
+  } catch (err: unknown) {
+    const details = err instanceof Error ? err.message : String(err ?? 'Unknown error');
+    res.status(500).json({ error: 'Proxy failed', details });
   }
 }

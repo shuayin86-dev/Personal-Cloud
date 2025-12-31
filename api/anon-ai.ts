@@ -1,9 +1,11 @@
+import type { Request, Response } from 'express';
+
 // Simple Vercel-compatible serverless function that proxies to an LLM.
 // Environment variables expected:
 // - OPENAI_API_KEY or LLM_API_KEY
 // - OPENAI_MODEL (optional, default provided)
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req: Request, res: Response) {
   // Allow POST for normal requests and GET for simple streaming EventSource clients
   if (req.method !== 'POST' && req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -60,7 +62,7 @@ export default async function handler(req: any, res: any) {
         messages: [systemMsg, { role: 'user', content: prompt }],
         temperature,
         stream: true,
-      } as any;
+      };
 
       const upstream = await fetch(endpoint, {
         method: 'POST',
@@ -139,14 +141,14 @@ export default async function handler(req: any, res: any) {
     const data: unknown = await r.json();
 
     // Type guards to safely inspect the unknown JSON returned by the upstream LLM
-    const isObject = (v: unknown): v is Record<string, any> => typeof v === 'object' && v !== null;
+    const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
     const isString = (v: unknown): v is string => typeof v === 'string';
 
     let text = '';
     if (isObject(data)) {
       const choices = data.choices;
       if (Array.isArray(choices) && choices[0]) {
-        const c = choices[0] as Record<string, any>;
+        const c = choices[0] as Record<string, unknown>;
         if (isObject(c.message) && isString(c.message.content)) {
           text = c.message.content;
         } else if (isString(c.text)) {
@@ -168,7 +170,8 @@ export default async function handler(req: any, res: any) {
     }
 
     res.status(200).json({ text });
-  } catch (err: any) {
-    res.status(500).json({ error: 'Proxy failed', details: err?.message || String(err) });
+  } catch (err: unknown) {
+    const details = err instanceof Error ? err.message : String(err ?? 'Unknown error');
+    res.status(500).json({ error: 'Proxy failed', details });
   }
 }

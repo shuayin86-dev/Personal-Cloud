@@ -48,7 +48,7 @@ export const CloudAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication 
             });
           }
         } catch (err) {
-          // ignore non-json
+          console.debug('CloudAiModal: non-json SSE chunk', err, ev.data);
         }
       };
       es.addEventListener("done", () => {
@@ -58,7 +58,7 @@ export const CloudAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication 
       });
       es.onerror = () => {
         setStreaming(false);
-        try { es.close(); } catch (_) {}
+        try { es.close(); } catch (err) { console.debug('CloudAiModal: failed to close EventSource', err); }
         streamRef.current = null;
         setResponses((rs) => {
           const copy = [...rs];
@@ -76,7 +76,7 @@ export const CloudAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication 
 
   const stopStream = () => {
     if (streamRef.current) {
-      try { streamRef.current.close(); } catch (_) {}
+      try { streamRef.current.close(); } catch (err) { console.debug('CloudAiModal: stopStream close failed', err); }
       streamRef.current = null;
       setStreaming(false);
     }

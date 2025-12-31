@@ -1,5 +1,6 @@
+import type { Request, Response } from 'express';
 // SSE streaming proxy to OpenAI (Chat Completions streaming)
-export default async function handler(req: any, res: any) {
+export default async function handler(req: Request, res: Response) {
   console.debug('cloud-ai-stream: incoming request', { method: req.method, url: req.url });
 
   if (req.method !== 'GET' && req.method !== 'POST') {
@@ -42,7 +43,7 @@ export default async function handler(req: any, res: any) {
     'Access-Control-Allow-Origin': '*',
   });
   res.write(': connected\n\n');
-  try { res.flushHeaders?.(); } catch (e) { /* ignore if not supported */ }
+  try { res.flushHeaders?.(); } catch (e) { console.debug('flushHeaders not supported'); }
 
   try {
     const body = {
@@ -53,7 +54,7 @@ export default async function handler(req: any, res: any) {
       ],
       temperature: temperature || 0.2,
       stream: true,
-    } as any;
+    };
 
     console.debug('cloud-ai-stream: fetching upstream', { endpoint, model });
     const openaiRes = await fetch(endpoint, {
@@ -76,12 +77,12 @@ export default async function handler(req: any, res: any) {
     }
 
     // Helper to send SSE data
-    const sendData = (payload: any) => {
-      try { res.write(`data: ${JSON.stringify(payload)}\n\n`); } catch (e) { /* ignore */ }
+    const sendData = (payload: Record<string, unknown>): void => {
+      try { res.write(`data: ${JSON.stringify(payload)}\n\n`); } catch (e) { console.debug('cloud-ai-stream: sse write failed', e); }
     };
 
     // Stream chunks from OpenAI to client as SSE `data: {chunk:...}` events
-    const reader = (openaiRes.body as any).getReader();
+    const reader = openaiRes.body.getReader();
     const decoder = new TextDecoder('utf-8');
     let buf = '';
 
@@ -118,9 +119,10 @@ export default async function handler(req: any, res: any) {
     // finished
     res.write(`event: done\ndata: ${JSON.stringify({ done: true })}\n\n`);
     res.end();
-  } catch (err: any) {
-    console.error('cloud-ai-stream: unexpected error', err);
-    try { res.write(`data: ${JSON.stringify({ error: err?.message || String(err) })}\n\n`); } catch (e) {}
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err ?? 'Unknown error');
+    console.error('cloud-ai-stream: unexpected error', message);
+    try { res.write(`data: ${JSON.stringify({ error: message })}\n\n`); } catch (e) { console.debug('cloud-ai-stream: failed to write error to client', e); }
     res.end();
   }
 }
