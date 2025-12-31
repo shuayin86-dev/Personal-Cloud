@@ -147,7 +147,7 @@ export const ProfileModal = ({ isOpen, onClose, points = 0, activity = [] }: Pro
           const p = stored ? JSON.parse(stored) : { points: 0 };
           p.isAdmin = true;
           localStorage.setItem(`pc:user:${user.id}`, JSON.stringify(p));
-        } catch (e) { console.debug('ProfileModal: failed to persist admin flag locally', e); }
+        } catch (err: unknown) { console.debug('ProfileModal: failed to persist admin flag locally', err); }
         toast.success('Admin login successful');
         setAdminLoginOpen(false);
       }
@@ -279,6 +279,7 @@ export const ProfileModal = ({ isOpen, onClose, points = 0, activity = [] }: Pro
                 onClick={async () => {
                   const { data: { user } } = await supabase.auth.getUser();
                   if (!user) return toast.error('Not logged in');
+                  // Reset points on the profile
                   const { error } = await supabase.from('profiles').update({ points: 0 }).eq('user_id', user.id);
                   if (error) return toast.error('Failed to reset points');
                   toast.success('Points reset');
@@ -293,7 +294,16 @@ export const ProfileModal = ({ isOpen, onClose, points = 0, activity = [] }: Pro
                   if (!user) return toast.error('Not logged in');
                   const { error } = await supabase.from('profiles').update({ is_admin: false }).eq('user_id', user.id);
                   if (error) return toast.error('Failed to revoke admin');
-                  try { const stored = localStorage.getItem(`pc:user:${user.id}`); if (stored) { const p = JSON.parse(stored); p.isAdmin = false; localStorage.setItem(`pc:user:${user.id}`, JSON.stringify(p)); } } catch(e){ console.debug('ProfileModal: failed to update localStorage after revoke', e); }
+                  try {
+                    const stored = localStorage.getItem(`pc:user:${user.id}`);
+                    if (stored) {
+                      const p = JSON.parse(stored) as { points?: number; isAdmin?: boolean };
+                      p.isAdmin = false;
+                      localStorage.setItem(`pc:user:${user.id}`, JSON.stringify(p));
+                    }
+                  } catch (err: unknown) {
+                    console.debug('ProfileModal: failed to update localStorage after revoke', err);
+                  }
                   toast.success('Admin revoked');
                 }}
                 className="flex-1 py-2 bg-black/80 text-white rounded-lg text-sm font-medium neon-flash"
