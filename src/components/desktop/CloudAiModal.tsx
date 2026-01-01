@@ -86,34 +86,54 @@ export const CloudAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication 
     <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="w-[720px] max-w-[95%] neon-flash">
         <DialogHeader>
-          <DialogTitle>CloudAi — General Assistant</DialogTitle>
-          <DialogDescription>
-            CloudAi provides general chat capabilities. This instance enforces safety filters and does not bypass legal or platform restrictions.
+          <DialogTitle className="text-lg font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">🌐 CloudAi — Advanced Intelligence</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            State-of-the-art AI trained on vast knowledge bases. Expert-level reasoning in coding, analysis, writing, research, and creative problem-solving. Ethical and safety-aware.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground">Model:</label>
-            <select value={model} onChange={(e) => setModel(e.target.value)} className="px-2 py-1 bg-card border border-border rounded text-sm neon-item">
-              <option value="gpt-4o">gpt-4o</option>
-              <option value="gpt-4">gpt-4</option>
-              <option value="gpt-3.5">gpt-3.5</option>
-            </select>
+        <div className="space-y-3 mb-4 p-3 bg-card/50 border border-border rounded-lg">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-foreground">🤖 Model:</label>
+              <select value={model} onChange={(e) => setModel(e.target.value)} className="px-2 py-1.5 bg-background border border-border rounded text-xs neon-item hover:border-primary transition-colors">
+                <option value="gpt-4o">GPT-4o (Latest)</option>
+                <option value="gpt-4">GPT-4 (Advanced)</option>
+                <option value="gpt-3.5">GPT-3.5 (Fast)</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-foreground">⚙️ Response Style:</label>
+              <select value={temperature.toString()} onChange={(e) => setTemperature(Number(e.target.value))} className="px-2 py-1.5 bg-background border border-border rounded text-xs neon-item hover:border-primary transition-colors">
+                <option value="0">Focused (0.0)</option>
+                <option value="0.3">Analytical (0.3)</option>
+                <option value="0.7">Balanced (0.7)</option>
+                <option value="1">Creative (1.0)</option>
+              </select>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground">Temperature:</label>
-            <input type="range" min={0} max={1} step={0.05} value={temperature} onChange={(e) => setTemperature(Number(e.target.value))} className="w-40" />
-            <div className="text-xs text-muted-foreground w-10 text-right">{temperature.toFixed(2)}</div>
+          <div className="text-[11px] text-muted-foreground bg-background px-2 py-1.5 rounded border border-border/50">
+            ✨ Expertise: Code Generation • Data Analysis • Technical Writing • Math & Logic • Research Synthesis • Creative Problem-Solving
           </div>
         </div>
 
-        <div className="h-56 overflow-auto bg-background border border-border rounded p-2 text-sm mb-3 neon-item">
+        <div className="h-56 overflow-auto bg-background border border-border rounded p-3 text-sm mb-3 neon-item space-y-2">
           {responses.length === 0 ? (
-            <p className="text-muted-foreground">No conversation yet. Ask CloudAi a question.</p>
+            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+              <div className="text-4xl mb-3">🧠</div>
+              <p className="text-xs font-semibold">Ask CloudAi anything</p>
+              <p className="text-[11px] text-muted-foreground/70 mt-3 leading-relaxed">
+                💻 Write & debug code • 📊 Analyze data • ✍️ Write content<br/>
+                🔬 Research topics • 🧮 Solve math • 🎨 Creative projects
+              </p>
+            </div>
           ) : (
             responses.map((r, i) => (
-              <div key={i} className="mb-2 whitespace-pre-wrap">{r}</div>
+              <div key={i} className={`mb-2 whitespace-pre-wrap px-2.5 py-1.5 rounded text-xs ${
+                r.startsWith('You:') 
+                  ? 'bg-primary/20 border-l-2 border-primary text-primary-foreground font-medium' 
+                  : 'bg-card border-l-2 border-cyan-400/50 text-foreground'
+              }`}>{r}</div>
             ))
           )}
         </div>
@@ -141,7 +161,11 @@ export const CloudAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication 
         </form>
 
         <DialogFooter>
-          <div className="text-xs text-muted-foreground">CloudAi respects policy and safety filters.</div>
+          <div className="w-full">
+            <div className="text-[11px] text-muted-foreground bg-blue-950/30 px-2.5 py-1.5 rounded border border-blue-400/20">
+              ✅ Advanced reasoning • 📊 Multi-domain expertise • 💻 Production-grade output • 🛡️ Safety-aware • ⚡ Real-time streaming
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

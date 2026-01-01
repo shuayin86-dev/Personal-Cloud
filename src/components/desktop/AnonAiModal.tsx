@@ -282,38 +282,57 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
     <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="w-[720px] max-w-[95%] neon-flash">
         <DialogHeader>
-          <DialogTitle>Anon Ai — Defensive Cybersecurity Assistant</DialogTitle>
-          <DialogDescription>
-            Specifically built for cybersecurity professionals, ethical hackers, and digital forensics experts. Anon Ai provides high-level, defensive guidance and tool recommendations. It does not provide or facilitate illegal or harmful actions.
+          <DialogTitle className="text-lg font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">🔐 Anon Ai — Advanced Cybersecurity Intelligence</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            Enterprise-grade defensive cybersecurity expertise. Threat analysis, secure architecture, forensics, and ethical auditing. Strictly lawful and defensive guidance only.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center justify-between gap-2 mb-3 p-2 bg-card/50 border border-border rounded-lg">
           <div className="flex items-center gap-2">
-            <button onClick={() => setTerminalMode(false)} className={`px-2 py-1 rounded ${!terminalMode ? 'bg-primary text-primary-foreground' : 'bg-card'}`}>Chat</button>
-            <button onClick={() => setTerminalMode(true)} className={`px-2 py-1 rounded ${terminalMode ? 'bg-primary text-primary-foreground' : 'bg-card'}`}>Terminal</button>
+            <button onClick={() => setTerminalMode(false)} className={`px-3 py-1.5 rounded text-sm transition-all ${!terminalMode ? 'bg-primary text-primary-foreground font-semibold' : 'bg-card hover:bg-card/80'}`}>💬 Chat</button>
+            <button onClick={() => setTerminalMode(true)} className={`px-3 py-1.5 rounded text-sm transition-all ${terminalMode ? 'bg-primary text-primary-foreground font-semibold' : 'bg-card hover:bg-card/80'}`}>🖥️ Terminal</button>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground">Model:</label>
-            <select value={model} onChange={(e) => setModel(e.target.value)} className="px-2 py-1 bg-card border border-border rounded text-sm neon-item">
-              <option value="gpt-4o">gpt-4o</option>
-              <option value="gpt-4">gpt-4</option>
-              <option value="gpt-3.5">gpt-3.5</option>
-            </select>
-            <label className="text-xs text-muted-foreground ml-2">Temp:</label>
-            <input type="range" min={0} max={1} step={0.05} value={temperature} onChange={(e) => setTemperature(Number(e.target.value))} className="w-36" />
-            <div className="text-xs text-muted-foreground w-10 text-right">{temperature.toFixed(2)}</div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <label className="text-xs font-semibold text-foreground">🤖 Model:</label>
+              <select value={model} onChange={(e) => setModel(e.target.value)} className="px-2 py-1 bg-background border border-border rounded text-xs neon-item">
+                <option value="gpt-4o">GPT-4o</option>
+                <option value="gpt-4">GPT-4</option>
+                <option value="gpt-3.5">GPT-3.5</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-1">
+              <label className="text-xs font-semibold text-foreground">Rigor:</label>
+              <select value={temperature.toString()} onChange={(e) => setTemperature(Number(e.target.value))} className="px-2 py-1 bg-background border border-border rounded text-xs neon-item">
+                <option value="0">Precise (0.0)</option>
+                <option value="0.3">Analytical (0.3)</option>
+                <option value="0.7">Balanced (0.7)</option>
+              </select>
+            </div>
           </div>
         </div>
 
         {!terminalMode ? (
           <>
-            <div style={{ height: paneHeight }} className="overflow-auto bg-background border border-border rounded p-2 text-sm mb-1 neon-item">
+            <div style={{ height: paneHeight }} className="overflow-auto bg-background border border-border rounded p-3 text-sm mb-1 neon-item space-y-2">
               {responses.length === 0 ? (
-                <p className="text-muted-foreground">No conversation yet. Ask a defensive cybersecurity question.</p>
+                <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                  <div className="text-4xl mb-3">🔐</div>
+                  <p className="text-xs font-semibold">Defensive Cybersecurity Intelligence</p>
+                  <p className="text-[11px] text-muted-foreground/70 mt-3 leading-relaxed">
+                    🛡️ Threat Assessment • 🔍 Forensics • 🏗️ Secure Architecture<br/>
+                    🔑 Access Control • 📋 Compliance • 🛠️ Security Tools<br/>
+                    ⚠️ Risk Analysis • 📊 Incident Response
+                  </p>
+                </div>
               ) : (
                 responses.map((r, i) => (
-                  <div key={i} className="mb-2 whitespace-pre-wrap">{r}</div>
+                  <div key={i} className={`mb-2 whitespace-pre-wrap px-2.5 py-1.5 rounded text-xs ${
+                    r.startsWith('You:')
+                      ? 'bg-primary/20 border-l-2 border-primary text-primary-foreground font-medium'
+                      : 'bg-card border-l-2 border-orange-400/50 text-foreground'
+                  }`}>{r}</div>
                 ))
               )}
             </div>
@@ -329,8 +348,8 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
             <form onSubmit={handleSend} className="flex gap-2">
               <input
                 ref={inputRef}
-                className="flex-1 px-3 py-2 bg-background border border-border rounded text-sm neon-border"
-                placeholder="Ask Anon Ai (defensive topics only)..."
+                className="flex-1 px-3 py-2 bg-background border border-border rounded text-sm neon-border focus:border-red-400/50 focus:outline-none transition"
+                placeholder="Ask about threats, forensics, architecture, tools, compliance..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => {
@@ -340,8 +359,8 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
                   }
                 }}
               />
-              <button type="submit" className="px-3 py-2 bg-primary text-primary-foreground rounded disabled:opacity-50" disabled={!query.trim() || loading}>
-                {loading ? "Thinking..." : "Ask"}
+              <button type="submit" className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-semibold transition disabled:opacity-50" disabled={!query.trim() || loading}>
+                {loading ? "Analyzing..." : "Send"}
               </button>
             </form>
           </>
@@ -392,7 +411,11 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
         )}
 
         <DialogFooter>
-          <div className="text-xs text-muted-foreground">Responses are high-level and defensive only.</div>
+          <div className="w-full">
+            <div className="text-[11px] text-muted-foreground bg-red-950/30 px-2.5 py-1.5 rounded border border-red-400/20">
+              ✅ Enterprise security • 🔍 Forensic analysis • 🛡️ Defensive focus • 📋 Compliance guidance • ⚠️ Risk assessment • 🛠️ Tool recommendations
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
