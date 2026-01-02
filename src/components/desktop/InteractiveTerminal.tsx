@@ -67,19 +67,42 @@ export const InteractiveTerminal = ({ username = "user" }: InteractiveTerminalPr
       case "help":
         return {
           output: [
+            "═══════════════════════════════════════════════════════════",
             "Available commands:",
-            "  help          - Show this help message",
+            "═══════════════════════════════════════════════════════════",
+            "",
+            "📂 File System:",
             "  ls [dir]      - List directory contents",
             "  cd <dir>      - Change directory",
             "  pwd           - Print working directory",
             "  cat <file>    - Display file contents",
+            "",
+            "📝 Text:",
             "  echo <text>   - Print text to terminal",
             "  whoami        - Display current user",
+            "",
+            "🔧 System:",
             "  date          - Display current date/time",
-            "  clear         - Clear the terminal",
             "  uname         - System information",
             "  neofetch      - Display system info",
+            "  clear         - Clear the terminal",
             "  history       - Show command history",
+            "",
+            "🛡️ Kali Linux Security Tools:",
+            "  nmap <host>   - Network mapper (scan ports/services)",
+            "  whois <host>  - Domain/IP lookup",
+            "  netstat       - Network statistics",
+            "  ifconfig      - Network configuration",
+            "  ping <host>   - Test host connectivity",
+            "  traceroute    - Trace network path",
+            "  dig <host>    - DNS lookup",
+            "  aircrack-ng   - WiFi security auditing",
+            "  hashcat       - Password hash cracking",
+            "  sqlmap        - SQL injection testing",
+            "  metasploit    - Penetration testing framework",
+            "",
+            "⚠️  Note: These are educational simulations. Use ethically & legally.",
+            "═══════════════════════════════════════════════════════════",
           ],
         };
 
@@ -166,6 +189,250 @@ export const InteractiveTerminal = ({ username = "user" }: InteractiveTerminalPr
         return {
           output: commandHistory.map((cmd, i) => `  ${i + 1}  ${cmd}`),
         };
+
+      case "nmap": {
+        if (!args[0]) {
+          return { output: ["nmap: No host specified. Usage: nmap <host>"], isError: true };
+        }
+        const host = args[0];
+        return {
+          output: [
+            `Starting Nmap 7.92 ( https://nmap.org ) at ${new Date().toLocaleString()}`,
+            `Nmap scan report for ${host}`,
+            `Host is up (0.045s latency).`,
+            "",
+            "PORT     STATE    SERVICE",
+            "22/tcp   open     ssh",
+            "80/tcp   open     http",
+            "443/tcp  open     https",
+            "3306/tcp filtered mysql",
+            "5432/tcp filtered postgresql",
+            "8080/tcp filtered http-proxy",
+            "",
+            "Nmap done at ${new Date().toLocaleString()}; 1 IP address (1 host up) scanned in 2.34 seconds",
+          ],
+        };
+      }
+
+      case "whois": {
+        if (!args[0]) {
+          return { output: ["whois: domain/IP required. Usage: whois <domain|ip>"], isError: true };
+        }
+        const query = args[0];
+        return {
+          output: [
+            `Whois Server: whois.iana.org`,
+            `Referral URL: whois.example.com`,
+            "",
+            `Domain Name: ${query.toUpperCase()}`,
+            `Registry Domain ID: D123456789-LROR`,
+            `Registrar WHOIS Server: whois.example.com`,
+            `Registrar URL: http://www.example.com`,
+            `Updated Date: 2024-01-02T10:30:00Z`,
+            `Creation Date: 2020-05-15T14:20:00Z`,
+            `Registry Expiry Date: 2026-05-15T14:20:00Z`,
+            `Registrant Country: US`,
+            `Admin Email: admin@example.com`,
+            `Tech Email: tech@example.com`,
+            `Name Server: ns1.example.com`,
+            `Name Server: ns2.example.com`,
+            `DNSSEC: unsigned`,
+          ],
+        };
+      }
+
+      case "netstat": {
+        return {
+          output: [
+            "Active Internet connections (tcp)",
+            "Proto Recv-Q Send-Q Local Address           Foreign Address         State",
+            "tcp        0      0 127.0.0.1:5432         0.0.0.0:*               LISTEN",
+            "tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN",
+            "tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN",
+            "tcp        0      0 0.0.0.0:443             0.0.0.0:*               LISTEN",
+            "tcp        0      0 192.168.1.100:56234     142.250.80.46:443       ESTABLISHED",
+            "tcp        1      0 192.168.1.100:45678     172.217.21.46:443       CLOSE_WAIT",
+          ],
+        };
+      }
+
+      case "ifconfig": {
+        return {
+          output: [
+            "eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>",
+            "      inet 192.168.1.100  netmask 255.255.255.0  broadcast 192.168.1.255",
+            "      inet6 fe80::a00:27ff:fe4e:66a1  prefixlen 64  scopeid 0x20<link>",
+            "      ether 08:00:27:4e:66:a1  txqueuelen 1000  (Ethernet)",
+            "      RX packets 12456  bytes 9876543 (9.4 MiB)",
+            "      RX errors 0  dropped 0  overruns 0  frame 0",
+            "      TX packets 8901  bytes 5432109 (5.2 MiB)",
+            "      TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0",
+            "",
+            "lo: flags=73<UP,LOOPBACK,RUNNING>",
+            "      inet 127.0.0.1  netmask 255.0.0.0",
+            "      inet6 ::1  prefixlen 128  scopeid 0x10<host>",
+            "      loop  txqueuelen 1000  (Local Loopback)",
+            "      RX packets 246  bytes 20483 (20.0 KiB)",
+            "      TX packets 246  bytes 20483 (20.0 KiB)",
+          ],
+        };
+      }
+
+      case "ping": {
+        if (!args[0]) {
+          return { output: ["ping: usage error: Destination host required"], isError: true };
+        }
+        return {
+          output: [
+            `PING ${args[0]} (192.0.2.1) 56(84) bytes of data.`,
+            `64 bytes from 192.0.2.1: icmp_seq=1 ttl=63 time=12.4 ms`,
+            `64 bytes from 192.0.2.1: icmp_seq=2 ttl=63 time=11.8 ms`,
+            `64 bytes from 192.0.2.1: icmp_seq=3 ttl=63 time=13.2 ms`,
+            `64 bytes from 192.0.2.1: icmp_seq=4 ttl=63 time=12.1 ms`,
+            "",
+            `--- ${args[0]} statistics ---`,
+            `4 packets transmitted, 4 received, 0% packet loss, time 1003ms`,
+            `rtt min/avg/max/stddev = 11.8/12.4/13.2/0.5 ms`,
+          ],
+        };
+      }
+
+      case "traceroute": {
+        if (!args[0]) {
+          return { output: ["traceroute: No destination specified"], isError: true };
+        }
+        return {
+          output: [
+            `traceroute to ${args[0]} (192.0.2.1), 30 hops max, 60 byte packets`,
+            ` 1  192.168.1.1 (192.168.1.1)  1.234 ms  1.123 ms  1.456 ms`,
+            ` 2  10.0.0.1 (10.0.0.1)  5.432 ms  5.210 ms  5.678 ms`,
+            ` 3  203.0.113.5 (203.0.113.5)  12.345 ms  12.543 ms  12.123 ms`,
+            ` 4  198.51.100.1 (198.51.100.1)  18.765 ms  19.234 ms  18.456 ms`,
+            ` 5  ${args[0]} (192.0.2.1)  21.432 ms  21.123 ms  21.678 ms`,
+          ],
+        };
+      }
+
+      case "dig": {
+        if (!args[0]) {
+          return { output: ["dig: invalid option -- no query"], isError: true };
+        }
+        return {
+          output: [
+            `; <<>> DiG 9.16.1-Ubuntu <<>> ${args[0]}`,
+            `; (1 server found)`,
+            `;; global options: +cmd`,
+            `;; Got answer:`,
+            `;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 12345`,
+            `; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 2, ADDITIONAL: 0`,
+            "",
+            `;; QUESTION SECTION:`,
+            `;${args[0]}.                    IN      A`,
+            "",
+            `;; ANSWER SECTION:`,
+            `${args[0]}.             300     IN      A       192.0.2.1`,
+            "",
+            `;; AUTHORITY SECTION:`,
+            `example.com.            172800  IN      NS      ns1.example.com.`,
+            `example.com.            172800  IN      NS      ns2.example.com.`,
+            "",
+            `;; Query time: 45 msec`,
+            `;; SERVER: 8.8.8.8#53(8.8.8.8)`,
+            `;; WHEN: ${new Date().toUTCString()}`,
+            `;; MSG SIZE  rcvd: 123`,
+          ],
+        };
+      }
+
+      case "aircrack-ng": {
+        return {
+          output: [
+            "Aircrack-ng 1.7",
+            "[*] Reading from pcap dump file cap.pcap",
+            "[*] Found 2 WPA Handshakes:",
+            "",
+            "BSSID              Essid                    Attempts  #Data IVs  LAN IP",
+            "00:1A:2B:3C:4D:5E  NetworkName1            12345     8934      No",
+            "00:2B:3C:4D:5E:6F  NetworkName2            54321     12456     No",
+            "",
+            "Password not found. Try with a different wordlist.",
+            "Tried 234567 out of 987654 passwords (23.7% complete)",
+          ],
+        };
+      }
+
+      case "hashcat": {
+        if (!args[0]) {
+          return { output: ["hashcat: No hash provided"], isError: true };
+        }
+        return {
+          output: [
+            "hashcat (v6.2.6) starting in autodetect mode...",
+            `Hash: ${args[0]}`,
+            "Hash.Type: Not identified (requires --mode or .hcstat2 file)",
+            "",
+            "[*] Hash mode auto-detected as 0 (MD5)",
+            "[*] Initialized with OpenCL 2.1 (Intel)",
+            "[*] Cracking: 1 hash in 1 saltless iteration",
+            "",
+            "Candidates.#1.........: xxxxxxxx",
+            "Candidates.#2.........: password123",
+            "Candidates.Status.......: 23.4%",
+            "Speed.#1.........: 4500.0 kH/s",
+            "",
+            "Note: Educational simulation only.",
+          ],
+        };
+      }
+
+      case "sqlmap": {
+        if (!args[0]) {
+          return { output: ["sqlmap: URL parameter required"], isError: true };
+        }
+        return {
+          output: [
+            `sqlmap/1.6.8#dev - automatic SQL injection and database takeover tool`,
+            `Target: ${args[0]}`,
+            "[*] Testing connection to the target URL",
+            "[*] Heuristic (basic) test shows that GET parameter 'id' might be vulnerable to SQL injection attacks",
+            "[*] Testing 'AND boolean-based blind - WHERE or HAVING clause'",
+            "[*] Testing 'MySQL >= 5.0 AND time-based blind'",
+            "[*] GET parameter 'id' appears to be vulnerable to SQL injection attacks",
+            "",
+            "Parameter: id",
+            "Type: AND/OR time-based blind",
+            "Title: MySQL >= 5.0.12 AND time-based blind",
+            "Payload: 1 AND SLEEP(5)",
+            "",
+            "⚠️  Only test on systems you have permission to test!",
+          ],
+        };
+      }
+
+      case "metasploit": {
+        return {
+          output: [
+            "       =[ metasploit v6.2.24 ]",
+            "+ -- --=[ 2224 exploits - 1164 auxiliary - 402 post ]",
+            "+ -- --=[ 603 payloads - 45 encoders - 11 nops ]",
+            "+ -- --=[ 9 evasion ]",
+            "",
+            "msf6 > help",
+            "",
+            "Core Commands",
+            "=============",
+            "    Command       Description",
+            "    -------       -----------",
+            "    use           Load a module",
+            "    set           Set a variable",
+            "    run/exploit   Execute the selected module",
+            "    show          Display module or global options",
+            "    back          Go back to the main prompt",
+            "",
+            "⚠️  For authorized penetration testing only!",
+          ],
+        };
+      }
 
       case "":
         return { output: [] };

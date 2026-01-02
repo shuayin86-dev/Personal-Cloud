@@ -282,9 +282,9 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
     <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="w-[720px] max-w-[95%] neon-flash">
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">🔐 Anon Ai — Advanced Cybersecurity Intelligence</DialogTitle>
+          <DialogTitle className="text-lg font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">🔐 KaliGpt — Advanced Cybersecurity & Penetration Testing Intelligence</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
-            Enterprise-grade defensive cybersecurity expertise. Threat analysis, secure architecture, forensics, and ethical auditing. Strictly lawful and defensive guidance only.
+            Enterprise-grade defensive cybersecurity & ethical penetration testing expertise. Threat analysis, secure architecture, forensics, compliance, and authorized security auditing. Strictly lawful and defensive guidance only.
           </DialogDescription>
         </DialogHeader>
 
@@ -319,11 +319,13 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
               {responses.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                   <div className="text-4xl mb-3">🔐</div>
-                  <p className="text-xs font-semibold">Defensive Cybersecurity Intelligence</p>
-                  <p className="text-[11px] text-muted-foreground/70 mt-3 leading-relaxed">
-                    🛡️ Threat Assessment • 🔍 Forensics • 🏗️ Secure Architecture<br/>
-                    🔑 Access Control • 📋 Compliance • 🛠️ Security Tools<br/>
-                    ⚠️ Risk Analysis • 📊 Incident Response
+                  <p className="text-xs font-semibold">KaliGpt - Cybersecurity & Penetration Testing Intelligence</p>
+                  <p className="text-[11px] text-muted-foreground/70 mt-3 leading-relaxed max-w-sm">
+                    <strong>Defensive Security:</strong> 🛡️ Threat Assessment • 🔍 Forensics • 🏗️ Secure Architecture<br/>
+                    <strong>Penetration Testing:</strong> 🎯 Vulnerability Assessment • 🔓 Exploitation Analysis • 📊 Reporting<br/>
+                    <strong>Network Security:</strong> 🌐 Port Scanning • 🔎 Fingerprinting • 🛣️ Network Mapping<br/>
+                    <strong>Compliance & Tools:</strong> 📋 OWASP/NIST • 🔧 Kali Linux Tools • 🔐 Cryptography<br/>
+                    <strong>⚠️ Legal & Ethical:</strong> Authorization Verification • Legal Frameworks • Best Practices
                   </p>
                 </div>
               ) : (
@@ -413,7 +415,7 @@ export const AnonAiModal: React.FC<Props> = ({ isOpen, onClose, sophistication =
         <DialogFooter>
           <div className="w-full">
             <div className="text-[11px] text-muted-foreground bg-red-950/30 px-2.5 py-1.5 rounded border border-red-400/20">
-              ✅ Enterprise security • 🔍 Forensic analysis • 🛡️ Defensive focus • 📋 Compliance guidance • ⚠️ Risk assessment • 🛠️ Tool recommendations
+              ✅ Legal Penetration Testing • 🎯 Vulnerability Assessment • 🛡️ Defensive Strategies • 📊 Incident Response • 🔍 Forensics • 🔧 Kali Linux Guidance • 📋 OWASP/NIST Standards • ⚠️ Ethical & Authorized Only
             </div>
           </div>
         </DialogFooter>
