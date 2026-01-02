@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Folder, FileText, Plus, Trash2, Edit2, Download, Upload, Copy, Move, Search as SearchIcon } from "lucide-react";
+import { Folder, FileText, Plus, Trash2, Edit2, Download, Upload, Copy, Move, Search as SearchIcon, Image as ImageIcon, Code, Music, GripVertical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface UserFile {
@@ -21,6 +21,8 @@ export const FileManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "type">("name");
   const [multiSelect, setMultiSelect] = useState<string[]>([]);
+  const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [newName, setNewName] = useState("");
@@ -161,13 +163,28 @@ export const FileManager = () => {
     setMultiSelect((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   };
 
+  const moveItemToFolder = async (itemId: string, targetFolderName: string) => {
+    const { error } = await supabase.from("user_files").update({ parent_folder: targetFolderName }).eq("id", itemId);
+    if (error) return toast({ title: "Error", description: error.message, variant: "destructive" });
+    fetchFiles();
+    toast({ title: "Moved", description: `Item moved to ${targetFolderName}` });
+  };
+
+  const getFileIcon = (fileType: string, fileName: string) => {
+    if (fileType === "folder") return <Folder className="w-6 h-6 text-blue-500" />;
+    if (fileType === "image") return <ImageIcon className="w-6 h-6 text-purple-500" />;
+    if (fileType.includes("audio") || fileName.endsWith(".mp3")) return <Music className="w-6 h-6 text-pink-500" />;
+    if (fileType.includes("text") || fileType === "text") return <Code className="w-6 h-6 text-green-500" />;
+    return <FileText className="w-6 h-6 text-slate-500" />;
+  };
+
   return (
     <div className="h-full flex bg-background">
       {/* Sidebar */}
       <div className="w-48 bg-card/50 border-r border-border p-3">
         <h3 className="font-semibold text-sm text-foreground mb-3">Quick Access</h3>
         <button
-          onClick={() => { setCurrentFolder("root"); setSelectedFile(null); }}
+          onClick={() => { setFolderStack(["root"]); setSelectedFile(null); }}
           className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-primary/10 ${
             currentFolder === "root" ? "bg-primary/20" : ""
           }`}
@@ -257,22 +274,35 @@ export const FileManager = () => {
                 return list.map((file) => (
                   <div
                     key={file.id}
+                    draggable={true}
+                    onDragStart={() => setDraggedItem(file.id)}
+                    onDragEnd={() => setDraggedItem(null)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      if (file.file_type === "folder") setDragOverFolder(file.id);
+                    }}
+                    onDragLeave={() => setDragOverFolder(null)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (draggedItem && file.file_type === "folder") {
+                        moveItemToFolder(draggedItem, file.name);
+                        setDragOverFolder(null);
+                      }
+                    }}
                     onDoubleClick={() => openItem(file)}
                     onClick={() => setSelectedFile(file)}
                     onContextMenu={(e) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, id: file.id }); }}
-                    className={`flex flex-col items-center gap-2 p-3 rounded-lg cursor-pointer transition-colors ${
-                      selectedFile?.id === file.id ? "bg-primary/20" : "hover:bg-card"
-                    }`}
+                    className={`flex flex-col items-center gap-2 p-3 rounded-lg cursor-pointer transition-all ${
+                      selectedFile?.id === file.id ? "bg-primary/20 shadow-md" : "hover:bg-card"
+                    } ${dragOverFolder === file.id ? "bg-primary/30 border-2 border-primary" : ""} ${draggedItem === file.id ? "opacity-50" : ""}`}
                   >
                     <div className="flex items-start w-full justify-between">
-                      <input type="checkbox" checked={multiSelect.includes(file.id)} onChange={() => toggleSelect(file.id)} onClick={(e) => e.stopPropagation()} />
-                      <div />
+                      <input type="checkbox" checked={multiSelect.includes(file.id)} onChange={() => toggleSelect(file.id)} onClick={(e) => e.stopPropagation()} className="accent-primary" />
+                      {draggedItem === file.id && <GripVertical className="w-4 h-4 text-muted-foreground" />}
                     </div>
-                    {file.file_type === "folder" ? (
-                      <Folder style={{ width: 'calc(var(--desktop-icon-size) * 0.9)', height: 'calc(var(--desktop-icon-size) * 0.9)' }} className="text-primary" />
-                    ) : (
-                      <FileText style={{ width: 'calc(var(--desktop-icon-size) * 0.9)', height: 'calc(var(--desktop-icon-size) * 0.9)' }} className="text-accent" />
-                    )}
+                    <div style={{ width: 'calc(var(--desktop-icon-size) * 0.9)', height: 'calc(var(--desktop-icon-size) * 0.9)' }} className="flex items-center justify-center">
+                      {getFileIcon(file.file_type, file.name)}
+                    </div>
                     <span className="text-sm text-center truncate w-full">{file.name}</span>
                   </div>
                 ));
@@ -286,62 +316,103 @@ export const FileManager = () => {
           </div>
 
           {/* File preview */}
-          {selectedFile && selectedFile.file_type !== "folder" && (
-            <div className="w-80 bg-card/50 border-l border-border p-4 overflow-auto">
+          {selectedFile && (
+            <div className="w-96 bg-card/50 border-l border-border p-4 overflow-auto">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-sm truncate">{selectedFile.name}</h3>
                 <div className="flex items-center gap-2">
-                  <Button size="sm" variant="ghost" onClick={() => renameItem(selectedFile.id)}>
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => downloadItem(selectedFile)}>
-                    <Download className="w-4 h-4" />
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => deleteItem(selectedFile.id)}>
+                  {getFileIcon(selectedFile.file_type, selectedFile.name)}
+                  <h3 className="font-semibold text-sm truncate">{selectedFile.name}</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  {selectedFile.file_type !== "folder" && (
+                    <>
+                      <Button size="sm" variant="ghost" onClick={() => renameItem(selectedFile.id)} title="Rename">
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => downloadItem(selectedFile)} title="Download">
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </>
+                  )}
+                  <Button size="sm" variant="ghost" onClick={() => deleteItem(selectedFile.id)} title="Delete">
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
                 </div>
               </div>
-              <div className="text-xs text-muted-foreground space-y-1 mb-3">
-                <p>Type: {selectedFile.file_type}</p>
-                <p>Location: /{selectedFile.parent_folder}</p>
+
+              {/* File info section */}
+              <div className="bg-background/50 p-3 rounded mb-3 border border-border/50">
+                <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase">Information</h4>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p><strong>Type:</strong> {selectedFile.file_type === "folder" ? "Folder" : selectedFile.file_type}</p>
+                  <p><strong>Location:</strong> /{selectedFile.parent_folder}</p>
+                  <p><strong>Size:</strong> {selectedFile.content ? `${selectedFile.content.length} bytes` : "—"}</p>
+                </div>
               </div>
+
+              {/* File preview */}
               {selectedFile.content && selectedFile.file_type === "image" && (
-                // image preview if stored as base64 or URL
-                <img src={selectedFile.content} alt={selectedFile.name} className="w-full rounded mb-3" />
-              )}
-              {selectedFile.content && selectedFile.file_type !== "image" && (
-                <div className="mt-1 p-2 bg-black/50 rounded text-xs font-mono text-primary max-h-64 overflow-auto">
-                  {selectedFile.content.substring(0, 1000)}
+                <div className="mb-3">
+                  <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase">Preview</h4>
+                  <img src={selectedFile.content} alt={selectedFile.name} className="w-full rounded border border-border/50 max-h-48 object-cover" />
                 </div>
               )}
-              <div className="mt-3">
-                <h4 className="text-sm font-medium mb-1">Properties</h4>
-                <div className="text-xs text-muted-foreground">
-                  <p>ID: {selectedFile.id}</p>
-                  <p>Created by: {selectedFile.file_type}</p>
+
+              {selectedFile.content && selectedFile.file_type !== "image" && selectedFile.file_type !== "folder" && (
+                <div className="mb-3">
+                  <h4 className="text-xs font-semibold text-muted-foreground mb-2 uppercase">Preview</h4>
+                  <div className="bg-black/50 rounded border border-border/50 text-xs font-mono text-green-400 max-h-48 overflow-auto p-2">
+                    <pre className="whitespace-pre-wrap break-words">{selectedFile.content.substring(0, 500)}{selectedFile.content.length > 500 ? "..." : ""}</pre>
+                  </div>
                 </div>
-                <div className="mt-3 flex gap-2">
-                  <Button size="sm" onClick={() => moveToRoot(selectedFile.id)}>
-                    <Move className="w-4 h-4 mr-1" /> Move Home
-                  </Button>
-                  <Button size="sm" onClick={() => { navigator.clipboard?.writeText(selectedFile.name); toast({ title: "Copied" }); }}>
-                    <Copy className="w-4 h-4 mr-1" /> Copy Name
-                  </Button>
-                </div>
+              )}
+
+              {/* Actions */}
+              <div className="space-y-2">
+                {selectedFile.file_type !== "folder" && (
+                  <>
+                    <Button size="sm" className="w-full" onClick={() => moveToRoot(selectedFile.id)}>
+                      <Move className="w-4 h-4 mr-2" /> Move to Home
+                    </Button>
+                    <Button size="sm" className="w-full" variant="secondary" onClick={() => { navigator.clipboard?.writeText(selectedFile.name); toast({ title: "Copied" }); }}>
+                      <Copy className="w-4 h-4 mr-2" /> Copy Name
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           )}
           {contextMenu && (
             <div
               style={{ left: contextMenu.x, top: contextMenu.y }}
-              className="fixed z-50 bg-card border border-border rounded shadow p-2"
+              className="fixed z-50 bg-card border border-border rounded shadow-lg p-1 min-w-max"
               onMouseLeave={() => setContextMenu(null)}
             >
-              <button className="block w-full text-left px-2 py-1 hover:bg-primary/10" onClick={() => { renameItem(contextMenu.id); setContextMenu(null); }}>Rename</button>
-              <button className="block w-full text-left px-2 py-1 hover:bg-primary/10" onClick={() => { downloadItem(files.find(f => f.id === contextMenu.id)!); setContextMenu(null); }}>Download</button>
-              <button className="block w-full text-left px-2 py-1 hover:bg-primary/10" onClick={() => { moveToRoot(contextMenu.id); setContextMenu(null); }}>Move to Home</button>
-              <button className="block w-full text-left px-2 py-1 hover:bg-primary/10 text-destructive" onClick={() => { deleteItem(contextMenu.id); setContextMenu(null); }}>Delete</button>
+              <button
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-primary/10 rounded transition-colors"
+                onClick={() => { renameItem(contextMenu.id); setContextMenu(null); }}
+              >
+                <Edit2 className="w-4 h-4" /> Rename
+              </button>
+              <button
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-primary/10 rounded transition-colors"
+                onClick={() => { downloadItem(files.find(f => f.id === contextMenu.id)!); setContextMenu(null); }}
+              >
+                <Download className="w-4 h-4" /> Download
+              </button>
+              <button
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-primary/10 rounded transition-colors"
+                onClick={() => { moveToRoot(contextMenu.id); setContextMenu(null); }}
+              >
+                <Move className="w-4 h-4" /> Move to Home
+              </button>
+              <hr className="my-1 border-border/50" />
+              <button
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-destructive/10 text-destructive rounded transition-colors"
+                onClick={() => { deleteItem(contextMenu.id); setContextMenu(null); }}
+              >
+                <Trash2 className="w-4 h-4" /> Delete
+              </button>
             </div>
           )}
         </div>
