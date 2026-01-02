@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { 
   Globe, Calculator, Clock, Wifi, Battery, 
-  Volume2, X, Minus, Square, Search, Code, Cloud, LogOut, User
+  Volume2, X, Minus, Square, Search, Code, Cloud, LogOut, User,
+  Folder, Terminal, FileText, Music, Settings, Image
 } from "lucide-react";
 import { CodeEditor } from "@/components/desktop/CodeEditor";
 import { motion } from "framer-motion";
@@ -303,8 +304,10 @@ const Desktop = () => {
           
           // Also update Supabase
           if (user?.id) {
-            supabase.from('profiles').update({ points: newPoints }).eq('user_id', user.id).catch(e => {
-              console.debug('Failed to update points in Supabase', e);
+            supabase.from('profiles').update({ points: newPoints }).eq('user_id', user.id).then(({ error }) => {
+              if (error) {
+                console.debug('Failed to update points in Supabase', error);
+              }
             });
           }
         }
