@@ -127,8 +127,11 @@ export const ProfileModal = ({ isOpen, onClose, points = 100, activity = [] }: P
 
   const handleAdminLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    const trimmedUsername = adminUserInput.trim();
+    const trimmedPassword = adminPassInput.trim();
+    
     // Client-side admin check (insecure, demo only)
-    if (adminUserInput === "Anon111" && adminPassInput === "VIC123##") {
+    if (trimmedUsername === "Anon111" && trimmedPassword === "VIC123##") {
       setAdminLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -150,9 +153,11 @@ export const ProfileModal = ({ isOpen, onClose, points = 100, activity = [] }: P
         } catch (err: unknown) { console.debug('ProfileModal: failed to persist admin flag locally', err); }
         toast.success('Admin login successful');
         setAdminLoginOpen(false);
+        setAdminUserInput('');
+        setAdminPassInput('');
       }
     } else {
-      toast.error('Admin login failed');
+      toast.error('Invalid username or password. Admin login failed');
     }
   };
 

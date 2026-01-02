@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, Check, CheckCheck, Cloud } from "lucide-react";
+import { Send, Check, CheckCheck, Cloud, Sparkles } from "lucide-react";
+import { CloudAiModal } from "./CloudAiModal";
 
 interface Message {
   id: string;
@@ -14,6 +15,7 @@ export const CloudChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [currentUser, setCurrentUser] = useState<{ id: string; email: string } | null>(null);
+  const [cloudAiOpen, setCloudAiOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -217,6 +219,14 @@ export const CloudChat = () => {
 
       {/* Input - WhatsApp style */}
       <form onSubmit={sendMessage} className="p-3 bg-card border-t border-border flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setCloudAiOpen(true)}
+          className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center hover:bg-blue-500/30 transition-colors shadow-lg border border-blue-400/30"
+          title="Open Cloud AI"
+        >
+          <Sparkles className="w-4 h-4 text-blue-400" />
+        </button>
         <div className="flex-1 relative">
           <input
             value={newMessage}
@@ -233,6 +243,9 @@ export const CloudChat = () => {
           <Send className="w-4 h-4 text-primary-foreground" />
         </button>
       </form>
+
+      {/* Cloud AI Modal */}
+      <CloudAiModal isOpen={cloudAiOpen} onClose={() => setCloudAiOpen(false)} sophistication="very-high" />
     </div>
   );
 };
