@@ -121,7 +121,7 @@ const iconStyles: Record<string, { bg: string; iconColor: string; shadow: string
 };
 
 const desktopIcons = [
-  { id: "files", name: "Finder", icon: Folder },
+  { id: "files", name: "File Manager", icon: Folder },
   { id: "code-editor", name: "Code", icon: Code },
   { id: "terminal", name: "Terminal", icon: Terminal },
   { id: "browser", name: "Safari", icon: Globe },

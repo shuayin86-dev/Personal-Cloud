@@ -5,10 +5,10 @@ import { Users, Loader2, Mail, Calendar, Trophy, Shield } from "lucide-react";
 interface UserProfile {
   user_id: string;
   username: string | null;
-  email: string | null;
+  email?: string | null;
   avatar_url: string | null;
-  points: number | null;
-  is_admin: boolean | null;
+  points?: number | null;
+  is_admin?: boolean | null;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -165,7 +165,7 @@ export const AdminUsersPanel = () => {
                       {user.username || "Unnamed User"}
                     </h3>
                     {user.is_admin && (
-                      <Shield className="w-4 h-4 text-yellow-500 flex-shrink-0" title="Admin" />
+                      <div title="Admin"><Shield className="w-4 h-4 text-yellow-500 flex-shrink-0" /></div>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground truncate">{user.email}</p>
