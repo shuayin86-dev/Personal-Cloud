@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, Check, CheckCheck, Cloud, Sparkles } from "lucide-react";
+import { Send, Check, CheckCheck, Cloud, Sparkles, LogIn, X } from "lucide-react";
 import { CloudAiModal } from "./CloudAiModal";
 
 interface Message {
@@ -11,12 +11,21 @@ interface Message {
   user_id: string;
 }
 
+interface Notification {
+  id: string;
+  username: string;
+  timestamp: number;
+}
+
 export const CloudChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [currentUser, setCurrentUser] = useState<{ id: string; email: string } | null>(null);
   const [cloudAiOpen, setCloudAiOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [activeUsers, setActiveUsers] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const notificationTimersRef = useRef<Record<string, NodeJS.Timeout>>({});
 
   useEffect(() => {
     fetchUser();
@@ -28,15 +37,46 @@ export const CloudChat = () => {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "chat_messages" },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
+          const message = payload.new as Message;
+          setMessages((prev) => [...prev, message]);
+          
+          // Check if this is a new user joining
+          setActiveUsers((prev) => {
+            const isNewUser = !prev.has(message.user_id);
+            if (isNewUser && message.user_id !== currentUser?.id) {
+              // Add notification for new user
+              const notificationId = `${message.user_id}_${Date.now()}`;
+              setNotifications((notifications) => [
+                ...notifications,
+                {
+                  id: notificationId,
+                  username: message.username,
+                  timestamp: Date.now(),
+                },
+              ]);
+
+              // Auto-remove notification after 7 seconds
+              const timer = setTimeout(() => {
+                setNotifications((notifications) =>
+                  notifications.filter((n) => n.id !== notificationId)
+                );
+                delete notificationTimersRef.current[notificationId];
+              }, 7000);
+
+              notificationTimersRef.current[notificationId] = timer;
+            }
+            return new Set([...prev, message.user_id]);
+          });
         }
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
+      // Clear all notification timers on unmount
+      Object.values(notificationTimersRef.current).forEach(clearTimeout);
     };
-  }, []);
+  }, [currentUser?.id]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -250,6 +290,36 @@ export const CloudChat = () => {
 
       {/* Cloud AI Modal */}
       <CloudAiModal isOpen={cloudAiOpen} onClose={() => setCloudAiOpen(false)} sophistication="very-high" />
+
+      {/* User Join Notifications */}
+      <div className="fixed bottom-20 right-4 z-50 space-y-2 pointer-events-none">
+        {notifications.map((notification) => (
+          <div
+            key={notification.id}
+            className="animate-in slide-in-from-right-5 fade-in pointer-events-auto"
+          >
+            <div className="bg-card/95 border border-primary/30 backdrop-blur-sm rounded-lg p-3 shadow-lg flex items-center gap-2 min-w-max">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <div className="flex items-center gap-2">
+                <LogIn className="w-4 h-4 text-green-400" />
+                <span className="text-sm font-medium text-foreground">
+                  <span className="text-green-400">~{notification.username}</span> joined
+                </span>
+              </div>
+              <button
+                onClick={() =>
+                  setNotifications((notifications) =>
+                    notifications.filter((n) => n.id !== notification.id)
+                  )
+                }
+                className="ml-2 p-1 hover:bg-primary/10 rounded transition-colors"
+              >
+                <X className="w-3 h-3 text-muted-foreground hover:text-foreground" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
