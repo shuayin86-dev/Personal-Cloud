@@ -517,24 +517,28 @@ export const KaliLinuxTerminal = () => {
   return (
     <div 
       ref={terminalRef}
-      className="h-full bg-black/95 p-4 font-mono text-sm overflow-auto cursor-text"
+      className="h-full bg-black/98 p-4 font-mono text-sm overflow-auto cursor-text"
       onClick={() => inputRef.current?.focus()}
+      style={{
+        backgroundImage: 'repeating-linear-gradient(0deg, rgba(34, 197, 94, 0.03), rgba(34, 197, 94, 0.03) 2px, transparent 2px, transparent 4px)',
+      }}
     >
-      <p className="text-green-400 font-bold">KaliGpt Security Terminal v1.0</p>
-      <p className="text-red-400 mb-2">⚠️  Authorized Penetration Testing & Security Auditing</p>
-      <p className="text-muted-foreground mb-3">Type 'help' for available commands | Type 'legal-notice' for disclaimer</p>
+      <p className="text-green-500 font-bold text-lg mb-1" style={{ textShadow: '0 0 10px rgba(34, 197, 94, 0.5)' }}>KaliGpt Security Terminal v1.0</p>
+      <p className="text-red-500 mb-2" style={{ textShadow: '0 0 10px rgba(239, 68, 68, 0.5)' }}>⚠️  Authorized Penetration Testing & Security Auditing</p>
+      <p className="text-green-400 mb-3 opacity-75">Type 'help' for available commands | Type 'legal-notice' for disclaimer</p>
+      <hr className="border-green-500/30 mb-3" />
       
       {history.map((entry, i) => (
-        <div key={i} className="mb-2">
-          <div className="flex items-center gap-2">
-            <span className="text-green-400">admin@kali</span>
-            <span className="text-muted-foreground">:</span>
-            <span className="text-muted-foreground">~</span>
-            <span className="text-muted-foreground">$</span>
-            <span className="text-foreground">{entry.command}</span>
+        <div key={i} className="mb-3 text-green-400">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-green-500 font-semibold">admin@kali</span>
+            <span className="text-green-500/60">:</span>
+            <span className="text-green-500/60">~</span>
+            <span className="text-green-500/60">$</span>
+            <span className="text-green-300 font-medium">{entry.command}</span>
           </div>
           {entry.output.map((line, j) => (
-            <p key={j} className={entry.isError ? "text-red-400" : "text-foreground/80"}>
+            <p key={j} className={entry.isError ? "text-red-400 pl-4" : "text-green-400 pl-4 opacity-90"} style={{ lineHeight: '1.5' }}>
               {line}
             </p>
           ))}
@@ -542,19 +546,20 @@ export const KaliLinuxTerminal = () => {
       ))}
 
       <div className="flex items-center gap-2">
-        <span className="text-green-400">admin@kali</span>
-        <span className="text-muted-foreground">:</span>
-        <span className="text-muted-foreground">~</span>
-        <span className="text-muted-foreground">$</span>
+        <span className="text-green-500 font-semibold">admin@kali</span>
+        <span className="text-green-500/60">:</span>
+        <span className="text-green-500/60">~</span>
+        <span className="text-green-500/60">$</span>
         <input
           ref={inputRef}
           type="text"
           value={currentInput}
           onChange={(e) => setCurrentInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-1 bg-transparent border-none outline-none text-foreground caret-green-400"
+          className="flex-1 bg-transparent border-none outline-none text-green-400 caret-green-500 font-medium"
           autoFocus
           spellCheck={false}
+          style={{ textShadow: '0 0 5px rgba(34, 197, 94, 0.3)' }}
         />
       </div>
     </div>
