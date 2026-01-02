@@ -21,6 +21,7 @@ import { Calculator as CalculatorApp } from "@/components/desktop/Calculator";
 import { NotesApp } from "@/components/desktop/NotesApp";
 import { ProfileModal } from "@/components/desktop/ProfileModal";
 import { WebBrowser } from "@/components/desktop/WebBrowser";
+import { KaliLinuxTerminalModal } from "@/components/desktop/KaliLinuxTerminalModal";
 
 interface Window {
   id: string;
@@ -143,6 +144,7 @@ const Desktop = () => {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [globalCloudAiOpen, setGlobalCloudAiOpen] = useState(false);
   const [globalAnonAiOpen, setGlobalAnonAiOpen] = useState(false);
+  const [globalKaliTerminalOpen, setGlobalKaliTerminalOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   
   // Dragging state for windows
@@ -485,9 +487,25 @@ const Desktop = () => {
         </motion.button>
       )}
 
+      {/* Kali Linux Terminal button (admin only) */}
+      {isAdmin && (
+        <motion.button
+          onClick={() => setGlobalKaliTerminalOpen(true)}
+          initial={{ y: 0 }}
+          animate={{ y: [0, -6, 0] }}
+          transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+          className="absolute right-6 bottom-24 z-50 w-12 h-12 rounded-full bg-gradient-to-br from-red-600 to-red-900 flex items-center justify-center shadow-xl border border-red-400 text-white neon-flash"
+          aria-label="Open Kali Linux Terminal"
+          title="Open Kali Linux Terminal"
+        >
+          <span className="font-semibold text-xs">K</span>
+        </motion.button>
+      )}
+
       {/* Global modals */}
       <CloudAiModal isOpen={globalCloudAiOpen} onClose={() => setGlobalCloudAiOpen(false)} sophistication="very-high" />
       <AnonAiModal isOpen={globalAnonAiOpen} onClose={() => setGlobalAnonAiOpen(false)} sophistication="very-high" />
+      <KaliLinuxTerminalModal isOpen={globalKaliTerminalOpen} onClose={() => setGlobalKaliTerminalOpen(false)} />
 
 
                 {/* Top highlight */}
