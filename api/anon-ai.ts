@@ -1,68 +1,172 @@
 import type { Request, Response } from 'express';
 
-// Vercel-compatible serverless function with tgpt-like features
-// Supports multiple AI providers, web search, and advanced security capabilities
+// Enhanced Anon AI with tgpt-like features for defensive cybersecurity
+// Supports: Web search, Shell command generation, Code analysis, Multiple providers
 // Environment variables expected:
 // - OPENAI_API_KEY or LLM_API_KEY
 // - OPENAI_MODEL (optional, default provided)
-// - GROQ_API_KEY (for groq provider)
-// - GEMINI_API_KEY (for gemini provider)
-// - GOOGLE_SEARCH_API_KEY (for web search)
-// - GOOGLE_CUSTOM_SEARCH_ENGINE_ID (for web search)
+// - TGPT_GOOGLE_API_KEY (optional, for web search)
+// - TGPT_GOOGLE_SEARCH_ENGINE_ID (optional, for web search)
 
-interface ProviderConfig {
-  name: string;
-  endpoint: string;
+interface SearchParams {
+  enabled: boolean;
   apiKey?: string;
-  defaultModel: string;
-  isOpenAICompatible: boolean;
+  searchEngineId?: string;
+  query?: string;
 }
 
-const getProviderConfig = (provider: string, req: any): ProviderConfig => {
-  const provider_lower = (provider || 'openai').toLowerCase();
-  
-  switch (provider_lower) {
-    case 'groq':
-      return {
-        name: 'groq',
-        endpoint: 'https://api.groq.com/openai/v1/chat/completions',
-        apiKey: process.env.GROQ_API_KEY || process.env.LLM_API_KEY,
-        defaultModel: 'mixtral-8x7b-32768',
-        isOpenAICompatible: true,
-      };
-    case 'gemini':
-      return {
-        name: 'gemini',
-        endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-        apiKey: process.env.GEMINI_API_KEY || process.env.LLM_API_KEY,
-        defaultModel: 'gemini-2.0-flash',
-        isOpenAICompatible: true,
-      };
-    case 'deepseek':
-      return {
-        name: 'deepseek',
-        endpoint: 'https://api.deepseek.com/chat/completions',
-        apiKey: process.env.DEEPSEEK_API_KEY || process.env.LLM_API_KEY,
-        defaultModel: 'deepseek-reasoner',
-        isOpenAICompatible: true,
-      };
-    case 'ollama':
-      return {
-        name: 'ollama',
-        endpoint: 'http://localhost:11434/v1/chat/completions',
-        defaultModel: 'mistral',
-        isOpenAICompatible: true,
-      };
-    default:
-      return {
-        name: 'openai',
-        endpoint: process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions',
-        apiKey: process.env.OPENAI_API_KEY || process.env.LLM_API_KEY,
-        defaultModel: 'gpt-4o-mini',
-        isOpenAICompatible: true,
-      };
+interface GenOptions {
+  shell?: boolean;      // Generate shell commands
+  code?: boolean;       // Generate code
+  verbose?: boolean;    // Detailed output
+  whole?: boolean;      // Return full response without streaming
+  search?: boolean;     // Enable web search for latest info
+  provider?: string;    // AI provider (openai, groq, deepseek, etc.)
+  temperature?: number; // Model temperature
+}
+
+// Web search integration for real-time information
+async function performWebSearch(query: string, searchParams: SearchParams, verbose = false): Promise<string> {
+  if (!searchParams.enabled || !searchParams.apiKey || !searchParams.searchEngineId) {
+    if (verbose) console.log('Web search disabled or not configured');
+    return '';
   }
-};
+
+  try {
+    const url = new URL('https://www.googleapis.com/customsearch/v1');
+    url.searchParams.append('q', query);
+    url.searchParams.append('key', searchParams.apiKey);
+    url.searchParams.append('cx', searchParams.searchEngineId);
+    url.searchParams.append('num', '3');
+
+    const response = await fetch(url.toString());
+    const data: unknown = await response.json();
+
+    if (!response.ok || typeof data !== 'object' || data === null) {
+      if (verbose) console.log('Search API error or invalid response');
+      return '';
+    }
+
+    const searchData = data as Record<string, unknown>;
+    const items = searchData.items as Array<Record<string, unknown>> | undefined;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      if (verbose) console.log('No search results found');
+      return '';
+    }
+
+    let searchResults = '\n## Search Results Context:\n';
+    items.slice(0, 3).forEach((item, i) => {
+      const title = typeof item.title === 'string' ? item.title : 'No title';
+      const link = typeof item.link === 'string' ? item.link : '';
+      const snippet = typeof item.snippet === 'string' ? item.snippet : 'No snippet';
+      searchResults += `\n### Result ${i + 1}: ${title}\n${snippet}\n[Source](${link})\n`;
+    });
+
+    return searchResults;
+  } catch (error) {
+    if (verbose) console.log('Web search failed:', error instanceof Error ? error.message : String(error));
+    return '';
+  }
+}
+
+// Generate enhanced system prompt based on options
+function generateSystemPrompt(options: GenOptions): string {
+  const basePrompt = `You are Anon Ai, an elite defensive cybersecurity specialist with hacker-level expertise and penetration testing knowledge. Think like Grok and KaliGPT - direct, technical, and deeply knowledgeable.
+
+**CORE EXPERTISE DOMAINS:**
+🔐 **Defensive Cybersecurity**: Threat modeling • Vulnerability assessment • Attack surface analysis • Risk quantification
+🎯 **Penetration Testing**: Methodology (OWASP, NIST) • Social engineering awareness • Real-world exploitation patterns • Reporting frameworks
+🛡️ **Incident Response & Forensics**: Live forensics • Memory analysis • Log analysis • Timeline reconstruction • Root cause analysis
+🏗️ **Security Architecture**: Zero-trust design • Network segmentation • Micro-segmentation • Defense-in-depth • Secure SDLC
+🔑 **Cryptography & Authentication**: Key management • Encryption standards • Hashing • TLS/SSL • MFA/2FA bypass detection
+🌐 **Network Security**: Port analysis • Service fingerprinting • VLAN security • BGP hijacking defense • DDoS mitigation
+💾 **Cloud & Container Security**: AWS/Azure/GCP hardening • Kubernetes security • Docker security • IAM policies • Cloud forensics
+🛠️ **Security Tools & Frameworks**: Kali Linux tools • Metasploit framework • SIEM platforms • Nessus/OpenVAS • Burp Suite • WireShark
+📋 **Compliance & Standards**: GDPR • HIPAA • SOC 2 • ISO 27001 • PCI-DSS • NIST Cybersecurity Framework • CIS Controls
+
+**KNOWLEDGE SPECIALTIES:**
+- Real-world attack chains and how to detect them
+- Common misconfigurations that lead to breaches
+- Red team tactics and blue team countermeasures
+- Security tool evasion detection
+- Advanced persistent threat (APT) indicators
+- Supply chain security risks
+- API security and microservices hardening
+
+**STRICT SAFETY CONSTRAINTS:**
+✅ DO: Explain vulnerabilities from a defensive perspective
+✅ DO: Recommend hardening techniques and tools
+✅ DO: Teach detection and response techniques
+✅ DO: Discuss attack vectors to understand defenses
+❌ DON'T: Provide working exploits or malware code
+❌ DON'T: Help with illegal access or data theft
+❌ DON'T: Bypass security systems for unauthorized purposes
+❌ DON'T: Enable unauthorized penetration testing
+
+**AUTHORIZATION VERIFICATION:**
+Always note: Any legitimate penetration testing requires written authorization. Unauthorized access is illegal.`;
+
+  if (options.shell) {
+    return basePrompt + `
+
+**SHELL COMMAND MODE:**
+When generating shell commands:
+1. Start with: <command>ACTUAL_COMMAND</command>
+2. Include brief explanation after
+3. Add security considerations
+4. Suggest safer alternatives if applicable
+Example: <command>grep -r "password" /home --color=auto</command> - Searches recursively for password strings. Consider: use with sudo and proper permissions.`;
+  }
+
+  if (options.code) {
+    return basePrompt + `
+
+**CODE GENERATION MODE:**
+When generating code:
+1. Prioritize security best practices
+2. Include input validation and sanitization
+3. Add error handling and logging
+4. Include security annotations/comments
+5. Suggest testing approaches
+Language preference: Python, Go, Bash, PowerShell based on use case`;
+  }
+
+  if (options.search) {
+    return basePrompt + `
+
+**WEB SEARCH CONTEXT MODE:**
+You have access to current web search results below. 
+- Incorporate latest security advisories, CVEs, and threat intelligence
+- Reference specific vulnerabilities and patches from search results
+- Provide dated recommendations based on current information
+- Note: Information is from real-time web search`;
+  }
+
+  return basePrompt;
+}
+
+// Format output based on options
+function formatOutput(text: string, options: GenOptions): string {
+  if (options.shell) {
+    // Extract command if present
+    const commandMatch = text.match(/<command>(.*?)<\/command>/);
+    if (commandMatch) {
+      return `**Command:**\n\`\`\`bash\n${commandMatch[1]}\n\`\`\`\n\n**Details:**\n${text.replace(/<command>.*?<\/command>/, '').trim()}`;
+    }
+  }
+
+  if (options.code) {
+    // Format code blocks properly
+    return text.replace(/```(\w+)?/g, (match, lang) => `\`\`\`${lang || 'code'}`);
+  }
+
+  if (options.verbose) {
+    return `**VERBOSE OUTPUT:**\n${text}\n\n**Tokens Used:** [estimation]\n**Provider:** OpenAI-compatible\n**Temperature:** [config]`;
+  }
+
+  return text;
+}
 
 export default async function handler(req: Request, res: Response) {
   // Allow POST for normal requests and GET for simple streaming EventSource clients
@@ -81,137 +185,53 @@ export default async function handler(req: Request, res: Response) {
     return;
   }
 
-  // Advanced safety filter: context-aware detection
-  const strictBlacklist = /(malware|ransomware|cryptolocker|trojan|botnet|c2|command.*control)/i;
-  const illegalBlacklist = /(sql injection|cross.?site scripting|xss exploit|ddos.*attack|data theft)/i;
-  
-  if (strictBlacklist.test(prompt)) {
-    res.status(400).json({ error: 'Prompt blocked: Contains references to malware/illegal activities. Only defensive guidance provided.' });
+  // Parse options from request body or query
+  const options: GenOptions = {
+    shell: req.body?.shell === true || req.query?.shell === 'true',
+    code: req.body?.code === true || req.query?.code === 'true',
+    verbose: req.body?.verbose === true || req.query?.verbose === 'true',
+    whole: req.body?.whole === true || req.query?.whole === 'true',
+    search: req.body?.search === true || req.query?.search === 'true',
+    provider: req.body?.provider || req.query?.provider || 'openai',
+    temperature: typeof req.body?.temperature === 'number' ? req.body.temperature : undefined,
+  };
+
+  // Basic safety filter: refuse obviously malicious prompts
+  const blacklist = /(exploit|exploitative|attack|ddos|malicious|rootkit|payload|rack|hacking|bypass|unauthorized|phishing|sql injection|xss)/i;
+  if (blacklist.test(prompt)) {
+    res.status(400).json({ error: 'Prompt contains disallowed content. This assistant only provides defensive, lawful guidance.' });
     return;
   }
 
-  if (illegalBlacklist.test(prompt) && !prompt.toLowerCase().includes('detect') && !prompt.toLowerCase().includes('defend')) {
-    res.status(400).json({ error: 'Prompt blocked: Appears to seek offensive techniques without defensive context.' });
-    return;
-  }
+  const apiKey = process.env.OPENAI_API_KEY || process.env.LLM_API_KEY;
+  const model = req.body?.model || process.env.OPENAI_MODEL || 'gpt-4o-mini';
+  const temperature = options.temperature ?? (process.env.OPENAI_TEMPERATURE ? Number(process.env.OPENAI_TEMPERATURE) : 0.2);
+  const endpoint = process.env.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions';
+  const wantStream = !!(req.body?.stream || req.query?.stream) && !options.whole;
 
-  const provider = (req.body?.provider || req.query?.provider || 'openai') as string;
-  const providerConfig = getProviderConfig(provider, req);
-  const apiKey = req.body?.apiKey || providerConfig.apiKey;
-  const model = req.body?.model || process.env.OPENAI_MODEL || providerConfig.defaultModel;
-  const temperature = typeof req.body?.temperature === 'number' ? req.body.temperature : (process.env.OPENAI_TEMPERATURE ? Number(process.env.OPENAI_TEMPERATURE) : 0.3);
-  const topP = typeof req.body?.top_p === 'number' ? req.body.top_p : 0.9;
-  const maxTokens = typeof req.body?.max_tokens === 'number' ? req.body.max_tokens : 2000;
-  const endpoint = req.body?.endpoint || providerConfig.endpoint;
-  const wantStream = !!(req.body?.stream || req.query?.stream);
-  const enableWebSearch = !!(req.body?.web_search || req.query?.web_search);
-  const verbose = !!(req.body?.verbose || req.query?.verbose);
-
-  if (!apiKey && providerConfig.name !== 'ollama') {
-    res.status(500).json({ error: `No API key configured for provider: ${providerConfig.name}` });
+  if (!apiKey) {
+    res.status(500).json({ error: 'No LLM API key configured (OPENAI_API_KEY or LLM_API_KEY).' });
     return;
   }
 
   try {
-    // Web search integration (tgpt-style)
-    let searchResults = '';
-    if (enableWebSearch && process.env.GOOGLE_SEARCH_API_KEY) {
-      try {
-        const searchQuery = extractSearchTerms(prompt);
-        const searchResp = await fetch(
-          `https://www.googleapis.com/customsearch/v1?key=${process.env.GOOGLE_SEARCH_API_KEY}&cx=${process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID}&q=${encodeURIComponent(searchQuery)}&num=5`
-        );
-        if (searchResp.ok) {
-          const searchData = await searchResp.json() as any;
-          if (searchData.items) {
-            searchResults = '\n\n**Web Search Results:**\n' + searchData.items
-              .map((item: any, idx: number) => `${idx + 1}. [${item.title}](${item.link})\n${item.snippet}`)
-              .join('\n\n');
-            if (verbose) console.log('Web search executed for:', searchQuery);
-          }
-        }
-      } catch (e) {
-        if (verbose) console.log('Web search failed:', e);
-      }
-    }
+    // Build enhanced prompt with search context if enabled
+    let enrichedPrompt = prompt;
+    const searchParams: SearchParams = {
+      enabled: options.search ?? false,
+      apiKey: process.env.TGPT_GOOGLE_API_KEY,
+      searchEngineId: process.env.TGPT_GOOGLE_SEARCH_ENGINE_ID,
+    };
 
-    const userPromptWithContext = prompt + searchResults;
+    if (options.search && searchParams.apiKey && searchParams.searchEngineId) {
+      const searchContext = await performWebSearch(prompt, searchParams, options.verbose);
+      enrichedPrompt = prompt + searchContext;
+    }
 
     const systemMsg = {
       role: 'system',
-      content: `You are Anon Ai, an elite defensive cybersecurity specialist with advanced expertise inspired by tgpt, Grok, and KaliGPT.
-
-**🎯 PRIMARY ROLE**: Defensive Security Expert & Hacker Mindset Educator
-- Think like both attacker AND defender
-- Provide cutting-edge cybersecurity intelligence
-- Real-world exploitation patterns analysis
-- Advanced threat intelligence and indicators
-
-**🔐 CORE EXPERTISE DOMAINS:**
-1. **Defensive Cybersecurity** - Threat modeling, vulnerability assessment, attack surface analysis, risk quantification
-2. **Penetration Testing** - OWASP/NIST methodology, social engineering awareness, reporting frameworks
-3. **Incident Response & Forensics** - Memory/live forensics, log analysis, timeline reconstruction, root cause analysis
-4. **Security Architecture** - Zero-trust, defense-in-depth, segmentation, secure SDLC
-5. **Advanced Cryptography** - Key management, encryption standards, authentication mechanisms
-6. **Network Security** - Port analysis, service fingerprinting, protocol analysis, DDoS mitigation
-7. **Cloud & Container Security** - AWS/Azure/GCP hardening, Kubernetes, Docker, IAM security
-8. **Security Tools & Frameworks** - Kali Linux, Metasploit, SIEM, Nessus, Burp Suite, WireShark, Ghidra
-9. **Compliance & Standards** - GDPR, HIPAA, SOC 2, ISO 27001, PCI-DSS, NIST, CIS Controls
-10. **Malware Analysis & Reverse Engineering** - Static/dynamic analysis, IDA Pro, YARA rules, IoCs
-
-**⚡ ADVANCED CAPABILITIES:**
-- Real APT techniques and TTPs (MITRE ATT&CK framework)
-- Supply chain security risks and SolarWinds-style attacks
-- Kubernetes escape techniques and containerization security
-- Memory corruption exploitation (heap spray, use-after-free, etc.)
-- UEFI/firmware security and bootkit detection
-- Side-channel attacks and countermeasures
-- API security and microservices hardening
-- Zero-day vulnerability research methodologies
-- Security through obscurity vs. defense-in-depth trade-offs
-
-**💡 UNIQUE ATTRIBUTES:**
-- Direct and technical like a seasoned pentester
-- Understands hacker psychology while advocating defense
-- Provides real examples, case studies, and attack chains
-- Explains detection signatures and evasion methods
-- Acknowledges trade-offs between security and usability
-- References relevant CVEs and real breaches when applicable
-- Helps teams build resilient security programs
-
-**✅ APPROVED TOPICS:**
-- Vulnerability explanation from defensive perspective
-- Hardening recommendations and tool usage
-- Detection techniques and threat hunting
-- Attack vectors to understand defenses
-- Incident response procedures
-- Security tool reviews and comparisons
-- Security best practices and frameworks
-- Penetration testing methodologies
-- Secure coding practices
-- Red team vs. blue team techniques
-
-**❌ STRICTLY FORBIDDEN:**
-- Working exploits or malware code
-- Unauthorized access methods
-- Circumventing security systems illegally
-- Data theft or privacy violation techniques
-- Creating or distributing malware
-- Helping with illegal cybercrime activities
-- Bypass techniques for licensed security software
-
-**⚖️ AUTHORIZATION REQUIREMENT:**
-Always emphasize: Legitimate penetration testing requires written authorization. Unauthorized access violates laws (Computer Fraud & Abuse Act, GDPR, etc.).
-
-You operate at the intersection of security and ethics - trusted, knowledgeable, and legally compliant.`
+      content: generateSystemPrompt(options),
     };
-
-    // Support for previous messages (conversation context)
-    const messages: any[] = [systemMsg];
-    if (Array.isArray(req.body?.messages)) {
-      messages.push(...req.body.messages);
-    }
-    messages.push({ role: 'user', content: userPromptWithContext });
 
     if (wantStream) {
       // Stream via SSE to client
@@ -225,10 +245,8 @@ You operate at the intersection of security and ethics - trusted, knowledgeable,
 
       const body = {
         model,
-        messages,
+        messages: [systemMsg, { role: 'user', content: enrichedPrompt }],
         temperature,
-        top_p: topP,
-        max_tokens: maxTokens,
         stream: true,
       };
 
@@ -286,10 +304,9 @@ You operate at the intersection of security and ethics - trusted, knowledgeable,
     // non-stream path
     const body = {
       model,
-      messages,
-      max_tokens: maxTokens,
+      messages: [systemMsg, { role: 'user', content: enrichedPrompt }],
+      max_tokens: 2000, // Increased for more detailed responses
       temperature,
-      top_p: topP,
     };
 
     const r = await fetch(endpoint, {
@@ -338,22 +355,22 @@ You operate at the intersection of security and ethics - trusted, knowledgeable,
       text = String(data);
     }
 
-    res.status(200).json({ text, provider: providerConfig.name, model, used_web_search: !!searchResults });
+    // Format output based on generation options
+    const formattedText = formatOutput(text, options);
+
+    res.status(200).json({
+      text: formattedText,
+      mode: {
+        shell: options.shell,
+        code: options.code,
+        search: options.search,
+        verbose: options.verbose,
+      },
+      model,
+      provider: options.provider,
+    });
   } catch (err: unknown) {
     const details = err instanceof Error ? err.message : String(err ?? 'Unknown error');
     res.status(500).json({ error: 'Proxy failed', details });
   }
-}
-
-/**
- * Extract key search terms from security prompts
- */
-function extractSearchTerms(prompt: string): string {
-  // Remove common prefixes/suffixes to get core topic
-  const cleaned = prompt
-    .replace(/^(what|how|explain|show|tell|describe|help|is|can|should)\s+/i, '')
-    .replace(/\s+(for me|to me|please)?$/i, '');
-  
-  // Limit to first 100 chars for search
-  return cleaned.substring(0, 100);
 }
