@@ -59,3 +59,13 @@ export type FileCategory =
   | 'archive'
   | 'data'
   | 'other';
+
+// Penetration Testing Types
+export type VulnerabilitySeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
+export type ScanType = 'port-scan' | 'vulnerability-scan' | 'web-scan' | 'network-scan' | 'compliance-check';
+export type AttackType = 'dos' | 'social-engineering' | 'phishing' | 'brute-force' | 'injection';
+
+// Code Editor Types
+export type ProgrammingLanguage = 
+  | 'javascript' | 'typescript' | 'python' | 'java' | 'cpp' | 'csharp' 
+  | 'go' | 'rust' | 'php' | 'ruby' | 'swift' | 'kotlin' | 'sql' | 'html' | 'css';

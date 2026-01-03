@@ -23,6 +23,8 @@ import { NotesApp } from "@/components/desktop/NotesApp";
 import { ProfileModal } from "@/components/desktop/ProfileModal";
 import { WebBrowser } from "@/components/desktop/WebBrowser";
 import { KaliLinuxTerminalModal } from "@/components/desktop/KaliLinuxTerminalModal";
+import { PenetrationTestingModal } from "@/components/desktop/PenetrationTestingModal";
+import { AICodeEditorModal } from "@/components/desktop/AICodeEditorModal";
 
 interface Window {
   id: string;
@@ -150,6 +152,8 @@ const Desktop = () => {
   const [globalCloudAiOpen, setGlobalCloudAiOpen] = useState(false);
   const [globalAnonAiOpen, setGlobalAnonAiOpen] = useState(false);
   const [globalKaliTerminalOpen, setGlobalKaliTerminalOpen] = useState(false);
+  const [globalPenetrationTestingOpen, setGlobalPenetrationTestingOpen] = useState(false);
+  const [globalAICodeEditorOpen, setGlobalAICodeEditorOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userPoints, setUserPoints] = useState(100);
   const [pointsNotificationShown, setPointsNotificationShown] = useState(false);
@@ -592,10 +596,40 @@ const Desktop = () => {
         </motion.button>
       )}
 
+      {/* Penetration Testing button (admin only) */}
+      {isAdmin && (
+        <motion.button
+          onClick={() => setGlobalPenetrationTestingOpen(true)}
+          initial={{ y: 0 }}
+          animate={{ y: [0, -6, 0] }}
+          transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+          className="absolute right-6 bottom-40 z-50 w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-xl border border-orange-400 text-white neon-flash"
+          aria-label="Open Penetration Testing"
+          title="Open Penetration Testing"
+        >
+          <span className="font-semibold text-xs">P</span>
+        </motion.button>
+      )}
+
+      {/* AI Code Editor button (always available) */}
+      <motion.button
+        onClick={() => setGlobalAICodeEditorOpen(true)}
+        initial={{ y: 0 }}
+        animate={{ y: [0, -6, 0] }}
+        transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+        className="absolute right-6 bottom-52 z-50 w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-xl border border-blue-400 text-white neon-flash"
+        aria-label="Open AI Code Editor"
+        title="Open AI Code Editor"
+      >
+        <span className="font-semibold text-xs">C</span>
+      </motion.button>
+
       {/* Global modals */}
       <CloudAiModal isOpen={globalCloudAiOpen} onClose={() => setGlobalCloudAiOpen(false)} sophistication="very-high" />
       <AnonAiModal isOpen={globalAnonAiOpen} onClose={() => setGlobalAnonAiOpen(false)} sophistication="very-high" />
       <KaliLinuxTerminalModal isOpen={globalKaliTerminalOpen} onClose={() => setGlobalKaliTerminalOpen(false)} />
+      <PenetrationTestingModal isOpen={globalPenetrationTestingOpen} onClose={() => setGlobalPenetrationTestingOpen(false)} />
+      <AICodeEditorModal isOpen={globalAICodeEditorOpen} onClose={() => setGlobalAICodeEditorOpen(false)} />
 
 
                 {/* Top highlight */}
