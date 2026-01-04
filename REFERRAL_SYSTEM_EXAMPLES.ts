@@ -45,11 +45,15 @@ export const example3_getUserStats = () => {
   const stats = referralSystemService.getUserReferralStats(userId);
 
   console.log('📊 User Referral Stats:');
-  console.log(`- Referral Code: ${stats.referralCode}`);
-  console.log(`- Total Referrals: ${stats.totalReferred}`);
-  console.log(`- Active Referrals: ${stats.activeReferrals}`);
-  console.log(`- Points Earned: ${stats.totalPointsEarned}`);
-  console.log(`- Joined via Referral: ${stats.joinedViaReferral}`);
+  if (stats) {
+    console.log(`- Referral Code: ${stats.referralCode}`);
+    console.log(`- Total Referrals: ${stats.totalReferred}`);
+    console.log(`- Active Referrals: ${stats.activeReferrals}`);
+    console.log(`- Points Earned: ${stats.totalPointsEarned}`);
+    console.log(`- Joined via Referral: ${stats.joinedViaReferral}`);
+  } else {
+    console.log('No stats found for user');
+  }
 
   return stats;
 };
@@ -132,11 +136,15 @@ export const example8_adminGetUserDetails = () => {
   const details = referralSystemService.adminGetUserReferralDetails(userId);
 
   console.log('👤 Admin User Details:');
-  console.log(`User: ${details.stats.userId}`);
-  console.log(`Code: ${details.stats.referralCode}`);
-  console.log(`Total Referred: ${details.stats.totalReferred}`);
-  console.log(`Points Earned: ${details.stats.totalPointsEarned}`);
-  console.log(`Recent Referrals: ${details.referrals.length}`);
+  if (details.stats) {
+    console.log(`User: ${details.stats.userId}`);
+    console.log(`Code: ${details.stats.referralCode}`);
+    console.log(`Total Referred: ${details.stats.totalReferred}`);
+    console.log(`Points Earned: ${details.stats.totalPointsEarned}`);
+    console.log(`Recent Referrals: ${details.referrals.length}`);
+  } else {
+    console.log('No stats found for user');
+  }
 
   return details;
 };
@@ -202,16 +210,20 @@ export const scenario_completeReferralFlow = () => {
   // Step 4: Check User A's stats
   console.log('📊 Step 4: Check User A referral stats');
   const statsA = referralSystemService.getUserReferralStats('user_A');
-  console.log(`- Total Referrals: ${statsA.totalReferred}`);
-  console.log(`- Points Earned: ${statsA.totalPointsEarned}`);
-  console.log(`- Active Referrals: ${statsA.activeReferrals}\n`);
+  if (statsA) {
+    console.log(`- Total Referrals: ${statsA.totalReferred}`);
+    console.log(`- Points Earned: ${statsA.totalPointsEarned}`);
+    console.log(`- Active Referrals: ${statsA.activeReferrals}\n`);
+  }
 
   // Step 5: Check User B's profile
   console.log('📊 Step 5: Check User B referral profile');
   const statsB = referralSystemService.getUserReferralStats('user_B');
-  console.log(`- Referral Code: ${statsB.referralCode}`);
-  console.log(`- Joined via Referral: ${statsB.joinedViaReferral}`);
-  console.log(`- Referred By: ${statsB.referredBy}\n`);
+  if (statsB) {
+    console.log(`- Referral Code: ${statsB.referralCode}`);
+    console.log(`- Joined via Referral: ${statsB.joinedViaReferral}`);
+    console.log(`- Referred By: ${statsB.referredBy}\n`);
+  }
 
   // Step 6: Admin awards bonus points to User A
   console.log('🎁 Step 6: Admin awards bonus points');
