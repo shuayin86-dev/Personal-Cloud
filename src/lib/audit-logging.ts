@@ -177,9 +177,8 @@ export class AuditLoggingService {
     return this.query({
       userId,
       action: 'login',
-      status: 'failure',
       startDate,
-    });
+    }).filter(log => log.status === 'failure');
   }
 
   /**
