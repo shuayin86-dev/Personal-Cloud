@@ -70,7 +70,7 @@ export const AICodeEditorModal: React.FC<AICodeEditorModalProps> = ({ isOpen, on
     setIsAnalyzing(true);
     try {
       // Get suggestions
-      const lineSuggestions = aiCodeEditorService.getCodeSuggestions(code, language, 0, 0);
+      const lineSuggestions = await aiCodeEditorService.getCodeSuggestions(code, language, 0, 0);
       setSuggestions(lineSuggestions);
 
       // Get issues
@@ -93,8 +93,8 @@ export const AICodeEditorModal: React.FC<AICodeEditorModalProps> = ({ isOpen, on
 
   const applySuggestion = (suggestion: CodeSuggestion) => {
     setSelectedSuggestion(suggestion);
-    const newCode = aiCodeEditorService.generateFixedCode(code, suggestion.description, language);
-    setCode(newCode);
+    // Use the suggested code from the suggestion object
+    setCode(suggestion.suggestedCode);
     setSelectedSuggestion(null);
   };
 
@@ -209,13 +209,11 @@ export const AICodeEditorModal: React.FC<AICodeEditorModalProps> = ({ isOpen, on
                     <Card key={idx} className="bg-gray-800 border-gray-700 p-2">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="text-white text-sm font-semibold">{suggestion.type}</p>
+                          <p className="text-white text-sm font-semibold capitalize">{suggestion.type}</p>
                           <p className="text-gray-400 text-xs mt-1">{suggestion.description}</p>
-                          {suggestion.example && (
-                            <p className="text-purple-400 text-xs mt-1 font-mono">
-                              Example: {suggestion.example}
-                            </p>
-                          )}
+                          <p className="text-purple-400 text-xs mt-1 font-mono">
+                            Suggested: {suggestion.suggestedCode.substring(0, 50)}...
+                          </p>
                         </div>
                         <Button
                           size="sm"
@@ -243,12 +241,12 @@ export const AICodeEditorModal: React.FC<AICodeEditorModalProps> = ({ isOpen, on
                   issues.map((issue, idx) => (
                     <div
                       key={idx}
-                      className={`p-3 rounded-lg text-sm ${getIssueColor(issue.severity)}`}
+                      className={`p-3 rounded-lg text-sm ${getIssueColor(issue.type)}`}
                     >
                       <div className="flex items-start gap-2">
                         <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
-                          <p className="font-semibold">{issue.type}: {issue.message}</p>
+                          <p className="font-semibold capitalize">{issue.type}: {issue.message}</p>
                           <p className="text-xs opacity-75 mt-1">Line {issue.line}</p>
                           {issue.suggestion && (
                             <p className="text-xs opacity-75 mt-1 italic">
