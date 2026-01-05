@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { 
   Globe, Calculator, Clock, Wifi, Battery, 
   Volume2, X, Minus, Square, Search, Code, Cloud, LogOut, User,
-  Folder, Terminal, FileText, Music, Settings, Image
+  Folder, Terminal, FileText, Music, Settings, Image, Users, Trophy
 } from "lucide-react";
 import { CodeEditor } from "@/components/desktop/CodeEditor";
 import { motion } from "framer-motion";
@@ -28,6 +28,8 @@ import { AICodeEditorModal } from "@/components/desktop/AICodeEditorModal";
 import { VirtualPet } from "@/components/desktop/VirtualPet";
 import { Desktop3D } from "@/components/desktop/Desktop3D";
 import Desktop3DCustomization, { Desktop3DTheme } from "@/components/desktop/Desktop3DCustomization";
+import { CollaborationFeatures } from "@/components/desktop/CollaborationFeatures";
+import { AdminPetStatsPanel } from "@/components/desktop/AdminPetStatsPanel";
 
 interface Window {
   id: string;
@@ -124,6 +126,18 @@ const iconStyles: Record<string, { bg: string; iconColor: string; shadow: string
     shadow: "0 8px 24px rgba(142, 142, 147, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3)",
     innerGlow: "inset 0 2px 4px rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.2)"
   },
+  collaboration: {
+    bg: "linear-gradient(145deg, #00B4DB 0%, #0083B0 50%, #004E89 100%)",
+    iconColor: "text-white",
+    shadow: "0 8px 24px rgba(0, 180, 219, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3)",
+    innerGlow: "inset 0 2px 4px rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.2)"
+  },
+  "pet-admin": {
+    bg: "linear-gradient(145deg, #FFD700 0%, #FFA500 50%, #FF6B35 100%)",
+    iconColor: "text-white",
+    shadow: "0 8px 24px rgba(255, 107, 53, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3)",
+    innerGlow: "inset 0 2px 4px rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.2)"
+  },
 };
 
 const desktopIcons = [
@@ -134,6 +148,8 @@ const desktopIcons = [
   { id: "notes", name: "Notes", icon: FileText },
   { id: "music", name: "Music", icon: Music },
   { id: "photos", name: "Photos", icon: Image },
+  { id: "collaboration", name: "Collaboration", icon: Users },
+  { id: "pet-admin", name: "Pet Admin", icon: Trophy },
   { id: "chat", name: "Cloud Chat", icon: Cloud },
   { id: "calculator", name: "Calculator", icon: Calculator },
   { id: "settings", name: "Settings", icon: Settings },
@@ -441,6 +457,21 @@ const Desktop = () => {
             currentWallpaper={wallpaper}
             onWallpaperChange={setWallpaper}
           />
+        );
+      case "collaboration":
+        return (
+          <CollaborationFeatures 
+            userId={user.id} 
+            username={user.email?.split("@")[0] || "User"}
+          />
+        );
+      case "pet-admin":
+        return user.user_metadata?.is_admin ? (
+          <AdminPetStatsPanel />
+        ) : (
+          <div className="h-full flex items-center justify-center bg-background">
+            <p className="text-muted-foreground">Admin access required</p>
+          </div>
         );
       default:
         return (
