@@ -198,12 +198,6 @@ const Auth = () => {
               {isLogin ? "Sign up" : "Sign in"}
             </button>
           </p>
-
-          {isLogin && (
-            <div className="text-xs text-muted-foreground/60 text-center mt-4 p-2 bg-background/30 rounded border border-primary/10">
-              💡 Admin Access: Use <code className="text-primary/80">admin@cloudspace.io</code> with password <code className="text-primary/80">AdminAccess2025</code>
-            </div>
-          )}
         </div>
       </Card>
     </div>

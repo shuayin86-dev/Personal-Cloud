@@ -6,7 +6,7 @@ import {
   Globe, Calculator, Clock, Wifi, Battery, 
   Volume2, X, Minus, Square, Search, Code, Cloud, LogOut, User,
   Folder, Terminal, FileText, Music, Settings, Image, Users, Trophy,
-  Lock, Zap, Laugh, Film, Wand2
+  Lock, Zap, Laugh, Film
 } from "lucide-react";
 import { CodeEditor } from "@/components/desktop/CodeEditor";
 import { motion } from "framer-motion";
@@ -26,13 +26,9 @@ import { WebBrowser } from "@/components/desktop/WebBrowser";
 import { KaliLinuxTerminalModal } from "@/components/desktop/KaliLinuxTerminalModal";
 import { PenetrationTestingModal } from "@/components/desktop/PenetrationTestingModal";
 import { AICodeEditorModal } from "@/components/desktop/AICodeEditorModal";
-import { VirtualPet } from "@/components/desktop/VirtualPet";
-import { Desktop3D } from "@/components/desktop/Desktop3D";
-import Desktop3DCustomization, { Desktop3DTheme } from "@/components/desktop/Desktop3DCustomization";
 import { CollaborationFeatures } from "@/components/desktop/CollaborationFeatures";
 import { AdminPetStatsPanel } from "@/components/desktop/AdminPetStatsPanel";
 import { SelfDestructingFilesManager } from "@/components/desktop/SelfDestructingFilesManager";
-import { PhotoAutoTagging } from "@/components/desktop/PhotoAutoTagging";
 
 interface Window {
   id: string;
@@ -147,13 +143,6 @@ const iconStyles: Record<string, { bg: string; iconColor: string; shadow: string
     shadow: "0 8px 24px rgba(220, 38, 38, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3)",
     innerGlow: "inset 0 2px 4px rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.2)"
   },
-
-  "photo-tagging": {
-    bg: "linear-gradient(145deg, #10B981 0%, #059669 50%, #065F46 100%)",
-    iconColor: "text-white",
-    shadow: "0 8px 24px rgba(5, 150, 105, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3)",
-    innerGlow: "inset 0 2px 4px rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.2)"
-  },
 };
 
 const desktopIcons = [
@@ -161,7 +150,6 @@ const desktopIcons = [
   { id: "code-editor", name: "Code", icon: Code },
   { id: "terminal", name: "Terminal", icon: Terminal },
   { id: "self-destruct", name: "Self-Destruct Files", icon: Lock },
-  { id: "photo-tagging", name: "Photo Tags", icon: Wand2 },
   { id: "browser", name: "Safari", icon: Globe },
   { id: "notes", name: "Notes", icon: FileText },
   { id: "music", name: "Music", icon: Music },
@@ -194,12 +182,6 @@ const Desktop = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userPoints, setUserPoints] = useState(100);
   const [pointsNotificationShown, setPointsNotificationShown] = useState(false);
-  
-  // Virtual Pet and 3D Desktop state
-  const [showVirtualPet, setShowVirtualPet] = useState(true);
-  const [show3DDesktop, setShow3DDesktop] = useState(false);
-  const [current3DTheme, setCurrent3DTheme] = useState<Desktop3DTheme>("space");
-  const [show3DCustomization, setShow3DCustomization] = useState(false);
   
   // Dragging state for windows
   const [draggingWindow, setDraggingWindow] = useState<string | null>(null);
