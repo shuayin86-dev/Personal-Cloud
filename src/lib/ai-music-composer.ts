@@ -49,7 +49,7 @@ export class AIMusicComposerService {
 
       const music: GeneratedMusic = {
         id: `music_${Date.now()}`,
-        title: title || `${mood.capitalize()} ${genre} Composition`,
+        title: title || `${mood.charAt(0).toUpperCase() + mood.slice(1)} ${genre} Composition`,
         mood,
         genre,
         tempo,

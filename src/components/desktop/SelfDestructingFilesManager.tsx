@@ -23,7 +23,7 @@ export const SelfDestructingFilesManager = ({ userId }: { userId: string }) => {
   const loadFiles = async () => {
     try {
       setLoading(true);
-      const userFiles = await selfDestructService.getUserFiles(userId);
+      const userFiles = selfDestructService.getUserFiles();
       setFiles(userFiles);
     } catch (error) {
       console.error("Error loading files:", error);
@@ -34,7 +34,7 @@ export const SelfDestructingFilesManager = ({ userId }: { userId: string }) => {
 
   const loadStats = async () => {
     try {
-      const fileStats = await selfDestructService.getFileStats(userId);
+      const fileStats = await selfDestructService.getFileStats();
       setStats(fileStats);
     } catch (error) {
       console.error("Error loading stats:", error);
@@ -51,12 +51,10 @@ export const SelfDestructingFilesManager = ({ userId }: { userId: string }) => {
       setLoading(true);
       await selfDestructService.uploadSelfDestructFile(
         selectedFile,
-        userId,
         expiration,
         undefined,
         maxAccesses || undefined,
-        password || undefined,
-        true
+        password || undefined
       );
 
       setSelectedFile(null);
@@ -258,7 +256,7 @@ export const SelfDestructingFilesManager = ({ userId }: { userId: string }) => {
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-blue-500" />
                       <p className="font-semibold text-foreground">{file.fileName}</p>
-                      {file.password && <Lock className="w-4 h-4 text-yellow-500" />}
+                      {file.hasPassword && <Lock className="w-4 h-4 text-yellow-500" />}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {formatFileSize(file.fileSize)} • Accessed {file.accessCount} times

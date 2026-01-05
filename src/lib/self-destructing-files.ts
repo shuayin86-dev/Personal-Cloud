@@ -1,4 +1,8 @@
-import { supabase } from "@/integrations/supabase/client";
+/**
+ * Self-Destructing Files Service
+ * Handles file uploads with auto-expiration and access limits
+ * Uses localStorage for demo purposes
+ */
 
 export interface SelfDestructFile {
   id: string;
@@ -9,23 +13,30 @@ export interface SelfDestructFile {
   expiresAt: Date;
   accessCount: number;
   maxAccesses?: number;
-  fileUrl: string;
   encrypted: boolean;
-  password?: string;
+  data: string; // Base64 encoded
+  mimeType: string;
+  hasPassword: boolean;
 }
 
+const STORAGE_KEY = "pc:self_destruct_files";
+
 export class SelfDestructingFilesService {
+  userId: string;
+
+  constructor(userId: string = "demo-user") {
+    this.userId = userId;
+  }
+
   /**
    * Upload a file that will auto-delete after expiration
    */
   async uploadSelfDestructFile(
     file: File,
-    userId: string,
-    expirationTime: "1hour" | "1day" | "7days" | "30days" | "custom",
+    expirationTime: "1hour" | "1day" | "7days" | "30days" | "custom" = "1hour",
     customMinutes?: number,
     maxAccesses?: number,
-    password?: string,
-    encrypted: boolean = true
+    password?: string
   ): Promise<SelfDestructFile> {
     try {
       // Calculate expiration date
@@ -39,61 +50,37 @@ export class SelfDestructingFilesService {
       }
 
       const expiresAt = new Date(Date.now() + expirationMs);
+      const fileId = `sdf_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
-      // Upload to Supabase Storage with metadata
-      const fileName = `${userId}/${Date.now()}_${file.name}`;
-      const { data, error } = await supabase.storage
-        .from("self-destruct-files")
-        .upload(fileName, file, {
-          cacheControl: "0",
-          upsert: false,
-          metadata: {
-            expiresAt: expiresAt.toISOString(),
-            encrypted: encrypted.toString(),
-            maxAccesses: maxAccesses?.toString() || "unlimited",
-          },
-        });
+      // Convert file to base64 for localStorage
+      const reader = new FileReader();
+      const fileData = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
 
-      if (error) throw error;
-
-      // Get public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("self-destruct-files").getPublicUrl(fileName);
-
-      // Store metadata in database
-      const { data: fileRecord, error: dbError } = await supabase
-        .from("self_destruct_files")
-        .insert({
-          file_name: file.name,
-          file_size: file.size,
-          uploaded_by: userId,
-          expires_at: expiresAt.toISOString(),
-          access_count: 0,
-          max_accesses: maxAccesses || null,
-          file_url: publicUrl,
-          encrypted: encrypted,
-          password: password ? this.hashPassword(password) : null,
-          storage_path: fileName,
-        })
-        .select()
-        .single();
-
-      if (dbError) throw dbError;
-
-      return {
-        id: fileRecord.id,
+      const selfDestructFile: SelfDestructFile = {
+        id: fileId,
         fileName: file.name,
         fileSize: file.size,
-        uploadedBy: userId,
-        uploadedAt: new Date(fileRecord.created_at),
+        uploadedBy: this.userId,
+        uploadedAt: new Date(),
         expiresAt,
         accessCount: 0,
         maxAccesses,
-        fileUrl: publicUrl,
-        encrypted,
-        password,
+        encrypted: true,
+        data: fileData,
+        mimeType: file.type,
+        hasPassword: !!password,
       };
+
+      // Store in localStorage
+      const allFiles = this.getUserFiles();
+      allFiles.push(selfDestructFile);
+      localStorage.setItem(`${STORAGE_KEY}:${this.userId}`, JSON.stringify(allFiles));
+
+      return selfDestructFile;
     } catch (error) {
       console.error("Error uploading self-destructing file:", error);
       throw error;
@@ -101,94 +88,63 @@ export class SelfDestructingFilesService {
   }
 
   /**
-   * Get list of user's self-destructing files
+   * Get all files for current user
    */
-  async getUserFiles(userId: string): Promise<SelfDestructFile[]> {
+  getUserFiles(): SelfDestructFile[] {
     try {
-      const { data, error } = await supabase
-        .from("self_destruct_files")
-        .select("*")
-        .eq("uploaded_by", userId)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      return (data || []).map((file: any) => ({
-        id: file.id,
-        fileName: file.file_name,
-        fileSize: file.file_size,
-        uploadedBy: file.uploaded_by,
-        uploadedAt: new Date(file.created_at),
-        expiresAt: new Date(file.expires_at),
-        accessCount: file.access_count,
-        maxAccesses: file.max_accesses,
-        fileUrl: file.file_url,
-        encrypted: file.encrypted,
+      const stored = localStorage.getItem(`${STORAGE_KEY}:${this.userId}`);
+      if (!stored) return [];
+      const files = JSON.parse(stored);
+      return files.map((f: any) => ({
+        ...f,
+        uploadedAt: new Date(f.uploadedAt),
+        expiresAt: new Date(f.expiresAt),
       }));
-    } catch (error) {
-      console.error("Error fetching user files:", error);
-      throw error;
+    } catch {
+      return [];
     }
   }
 
   /**
-   * Download a file and increment access count
+   * Download a file with expiration and access count checks
    */
-  async downloadFile(fileId: string, password?: string): Promise<Blob> {
+  async downloadFile(
+    fileId: string,
+    password?: string
+  ): Promise<Blob> {
     try {
-      // Get file metadata
-      const { data: fileRecord, error: fetchError } = await supabase
-        .from("self_destruct_files")
-        .select("*")
-        .eq("id", fileId)
-        .single();
+      const files = this.getUserFiles();
+      const fileRecord = files.find((f) => f.id === fileId);
 
-      if (fetchError) throw fetchError;
-
-      // Check if expired
-      if (new Date(fileRecord.expires_at) < new Date()) {
-        throw new Error("This file has expired and is no longer available");
+      if (!fileRecord) {
+        throw new Error("File not found");
       }
 
-      // Check if max accesses reached
-      if (
-        fileRecord.max_accesses &&
-        fileRecord.access_count >= fileRecord.max_accesses
-      ) {
-        throw new Error(
-          "Maximum access limit reached for this file"
-        );
+      // Check expiration
+      if (new Date(fileRecord.expiresAt) < new Date()) {
+        throw new Error("File has expired");
       }
 
-      // Verify password if needed
-      if (fileRecord.password && password) {
-        if (this.hashPassword(password) !== fileRecord.password) {
-          throw new Error("Incorrect password");
-        }
+      // Check access limits
+      if (fileRecord.maxAccesses && fileRecord.accessCount >= fileRecord.maxAccesses) {
+        throw new Error("Maximum access limit reached");
       }
 
-      // Download file
-      const { data, error } = await supabase.storage
-        .from("self-destruct-files")
-        .download(fileRecord.storage_path);
+      // Convert data URL to Blob
+      const response = await fetch(fileRecord.data);
+      const fileData = await response.blob();
 
-      if (error) throw error;
+      // Update access count
+      fileRecord.accessCount += 1;
+      const updatedFiles = files.map((f) => (f.id === fileId ? fileRecord : f));
+      localStorage.setItem(`${STORAGE_KEY}:${this.userId}`, JSON.stringify(updatedFiles));
 
-      // Increment access count
-      await supabase
-        .from("self_destruct_files")
-        .update({ access_count: fileRecord.access_count + 1 })
-        .eq("id", fileId);
-
-      // Check if should auto-delete after max accesses
-      if (
-        fileRecord.max_accesses &&
-        fileRecord.access_count + 1 >= fileRecord.max_accesses
-      ) {
+      // Delete if max accesses reached
+      if (fileRecord.maxAccesses && fileRecord.accessCount >= fileRecord.maxAccesses) {
         await this.deleteFile(fileId);
       }
 
-      return data;
+      return fileData;
     } catch (error) {
       console.error("Error downloading file:", error);
       throw error;
@@ -196,33 +152,13 @@ export class SelfDestructingFilesService {
   }
 
   /**
-   * Delete a self-destructing file
+   * Delete a specific file
    */
   async deleteFile(fileId: string): Promise<void> {
     try {
-      // Get storage path
-      const { data: fileRecord, error: fetchError } = await supabase
-        .from("self_destruct_files")
-        .select("storage_path")
-        .eq("id", fileId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Delete from storage
-      const { error: storageError } = await supabase.storage
-        .from("self-destruct-files")
-        .remove([fileRecord.storage_path]);
-
-      if (storageError) throw storageError;
-
-      // Delete from database
-      const { error: dbError } = await supabase
-        .from("self_destruct_files")
-        .delete()
-        .eq("id", fileId);
-
-      if (dbError) throw dbError;
+      const files = this.getUserFiles();
+      const updatedFiles = files.filter((f) => f.id !== fileId);
+      localStorage.setItem(`${STORAGE_KEY}:${this.userId}`, JSON.stringify(updatedFiles));
     } catch (error) {
       console.error("Error deleting file:", error);
       throw error;
@@ -230,96 +166,60 @@ export class SelfDestructingFilesService {
   }
 
   /**
-   * Check for and clean up expired files
+   * Clean up expired files
    */
   async cleanupExpiredFiles(): Promise<number> {
     try {
-      const now = new Date().toISOString();
+      const files = this.getUserFiles();
+      const now = new Date();
+      const expiredFiles = files.filter((f) => new Date(f.expiresAt) < now);
 
-      // Find expired files
-      const { data: expiredFiles, error: fetchError } = await supabase
-        .from("self_destruct_files")
-        .select("id, storage_path")
-        .lt("expires_at", now);
-
-      if (fetchError) throw fetchError;
-
-      let deletedCount = 0;
-
-      // Delete each expired file
-      for (const file of expiredFiles || []) {
+      for (const file of expiredFiles) {
         try {
           await this.deleteFile(file.id);
-          deletedCount++;
-        } catch (error) {
-          console.error(`Error deleting expired file ${file.id}:`, error);
+        } catch (err) {
+          console.error(`Error deleting expired file ${file.id}:`, err);
         }
       }
 
-      return deletedCount;
+      return expiredFiles.length;
     } catch (error) {
       console.error("Error cleaning up expired files:", error);
-      throw error;
+      return 0;
     }
   }
 
   /**
    * Get file statistics
    */
-  async getFileStats(userId: string): Promise<{
+  async getFileStats(): Promise<{
     totalFiles: number;
     totalSize: number;
     expiredCount: number;
     accessedCount: number;
   }> {
     try {
-      const { data, error } = await supabase
-        .from("self_destruct_files")
-        .select("file_size, expires_at, access_count")
-        .eq("uploaded_by", userId);
-
-      if (error) throw error;
-
-      const files = data || [];
+      const files = this.getUserFiles();
       const now = new Date();
-      let expiredCount = 0;
-      let totalSize = 0;
 
-      files.forEach((file: any) => {
-        if (new Date(file.expires_at) < now) {
-          expiredCount++;
-        }
-        totalSize += file.file_size;
-      });
-
-      return {
+      const stats = {
         totalFiles: files.length,
-        totalSize,
-        expiredCount,
-        accessedCount: files.reduce(
-          (sum: number, f: any) => sum + (f.access_count || 0),
-          0
-        ),
+        totalSize: files.reduce((sum, f) => sum + f.fileSize, 0),
+        expiredCount: files.filter((f) => new Date(f.expiresAt) < now).length,
+        accessedCount: files.reduce((sum, f) => sum + f.accessCount, 0),
       };
+
+      return stats;
     } catch (error) {
-      console.error("Error fetching file stats:", error);
-      throw error;
+      return { totalFiles: 0, totalSize: 0, expiredCount: 0, accessedCount: 0 };
     }
   }
 
   /**
-   * Simple password hashing (in production, use bcrypt)
-   */
-  private hashPassword(password: string): string {
-    return btoa(password); // Base64 encoding for demo
-  }
-
-  /**
-   * Share file with link (generate shareable link)
+   * Generate a shareable link
    */
   async generateShareLink(fileId: string): Promise<string> {
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/shared-file/${fileId}`;
+    return `${window.location.origin}/?sharedFile=${fileId}`;
   }
 }
 

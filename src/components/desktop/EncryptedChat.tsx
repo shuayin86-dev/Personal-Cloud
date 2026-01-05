@@ -36,7 +36,7 @@ export const EncryptedChat = ({ userId, username }: { userId: string; username: 
 
   const loadConversations = async () => {
     try {
-      const convs = await encryptedChatService.getConversations(userId);
+      const convs = encryptedChatService.getConversations();
       setConversations(convs);
     } catch (error) {
       console.error("Error loading conversations:", error);
@@ -46,8 +46,8 @@ export const EncryptedChat = ({ userId, username }: { userId: string; username: 
   const loadConversation = async (otherUserId: string) => {
     try {
       setLoading(true);
-      const conv = await encryptedChatService.getConversation(userId, otherUserId);
-      setMessages(conv.messages);
+      const conv = await encryptedChatService.getConversation(otherUserId);
+      setMessages(conv);
     } catch (error) {
       console.error("Error loading conversation:", error);
     } finally {
@@ -65,9 +65,8 @@ export const EncryptedChat = ({ userId, username }: { userId: string; username: 
       }
 
       const message = await encryptedChatService.sendEncryptedMessage(
-        userId,
-        username,
         selectedConversation,
+        "User",
         messageText,
         encryptionKey
       );
