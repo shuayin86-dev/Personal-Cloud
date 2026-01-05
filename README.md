@@ -63,6 +63,21 @@ Clone the repo and use your preferred IDE. Any pushed changes will be reflected 
   - AnonAi: KaliGPT-level cybersecurity expertise
   - KaliGPT: Penetration testing terminal
 
+- **Virtual Pet Companion AI** ✨ NEW
+  - Interactive AI character on your desktop
+  - Mood system with dynamic reactions
+  - Task reminders and congratulations
+  - Auto-ticking lifecycle system
+  - Audio feedback and animations
+  - State persistence
+
+- **Customizable 3D Desktop Environment** ✨ NEW
+  - 5 unique visual themes (Space, Ocean, Forest, Neon, Abstract)
+  - Mouse-interactive 3D objects
+  - Real-time GPU-accelerated rendering
+  - Responsive design for all screen sizes
+  - Smooth animations and effects
+
 - **Desktop Environment**
   - File Manager with drag-and-drop
   - Code Editor
@@ -124,6 +139,61 @@ The proxy reads from `OPENAI_API_KEY` and exposes the streaming endpoints via SS
 ### Disable Neon Theme
 
 To disable the neon theme globally, remove the `neon-enabled` class from the app root in `src/App.tsx`.
+
+## New Features (Virtual Pet & 3D Desktop)
+
+### Virtual Pet Companion AI
+
+Meet your personal AI companion that lives on your desktop!
+
+- **Interactive Interactions**: Pet, feed, talk, or play with your companion
+- **Mood System**: Your pet's mood changes based on stats (energy, happiness, hunger)
+- **Task Management**: Pet reminds you of tasks and celebrates completions
+- **Persistent State**: Your pet remembers everything across sessions
+- **Audio Feedback**: Satisfying sounds for all interactions
+
+**Quick Start**:
+```tsx
+import { VirtualPet } from "@/components/desktop/VirtualPet";
+
+<VirtualPet isFloating={true} onClose={() => setShowPet(false)} />
+```
+
+**Learn More**: See [VIRTUAL_PET_3D_GUIDE.md](./VIRTUAL_PET_3D_GUIDE.md)
+
+### Customizable 3D Desktop Environment
+
+Transform your desktop with stunning interactive 3D visualizations!
+
+**5 Unique Themes**:
+- 🌌 **Space**: Dark cosmic environment with stars and nebula
+- 🌊 **Ocean**: Serene underwater atmosphere
+- 🌲 **Forest**: Natural green environment with trees
+- ⚡ **Neon**: Cyberpunk grid pattern
+- 🎨 **Abstract**: Colorful geometric shapes
+
+**Features**:
+- Real-time 3D rendering (60 FPS)
+- Mouse-interactive objects
+- Responsive to all screen sizes
+- Smooth animations and lighting
+- Full-screen immersion mode
+
+**Quick Start**:
+```tsx
+import { Desktop3D } from "@/components/desktop/Desktop3D";
+
+<Desktop3D theme="space" onCustomize={() => setShowCustomization(true)} />
+```
+
+**Learn More**: See [VIRTUAL_PET_3D_QUICKREF.md](./VIRTUAL_PET_3D_QUICKREF.md)
+
+### Documentation & Examples
+
+- **[VIRTUAL_PET_3D_GUIDE.md](./VIRTUAL_PET_3D_GUIDE.md)** - Comprehensive feature guide
+- **[VIRTUAL_PET_3D_QUICKREF.md](./VIRTUAL_PET_3D_QUICKREF.md)** - Quick reference & cheatsheet
+- **[VIRTUAL_PET_3D_EXAMPLES.tsx](./VIRTUAL_PET_3D_EXAMPLES.tsx)** - 10 working examples
+- **[VIRTUAL_PET_3D_COMPLETION.md](./VIRTUAL_PET_3D_COMPLETION.md)** - Implementation summary
 
 ## Deployment
 
