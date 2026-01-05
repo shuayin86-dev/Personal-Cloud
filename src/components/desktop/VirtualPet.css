@@ -1,0 +1,120 @@
+.pet-avatar {
+  animation: float 3s ease-in-out infinite;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+  transition: transform 0.3s ease;
+}
+
+.pet-avatar:hover {
+  transform: scale(1.1);
+}
+
+.pet-mood-happy {
+  animation: bounce 0.6s ease-in-out infinite;
+}
+
+.pet-mood-excited {
+  animation: spin 1s linear infinite;
+}
+
+.pet-mood-tired {
+  animation: sway 2s ease-in-out infinite;
+}
+
+.pet-mood-sad {
+  animation: droop 2s ease-in-out infinite;
+}
+
+.pet-mood-neutral {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes sway {
+  0%, 100% {
+    transform: rotate(-2deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+}
+
+@keyframes droop {
+  0%, 100% {
+    transform: translateY(0) scaleY(1);
+  }
+  50% {
+    transform: translateY(5px) scaleY(0.95);
+  }
+}
+
+/* Pet container animations */
+@keyframes slideInRight {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.pet-container {
+  animation: slideInRight 0.5s ease-out;
+}
+
+/* Pulse effect for important notifications */
+.pet-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Speech bubble animation */
+.pet-message {
+  animation: messageAppear 0.3s ease-out;
+}
+
+@keyframes messageAppear {
+  from {
+    transform: scale(0.8) translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}

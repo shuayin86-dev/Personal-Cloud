@@ -25,6 +25,9 @@ import { WebBrowser } from "@/components/desktop/WebBrowser";
 import { KaliLinuxTerminalModal } from "@/components/desktop/KaliLinuxTerminalModal";
 import { PenetrationTestingModal } from "@/components/desktop/PenetrationTestingModal";
 import { AICodeEditorModal } from "@/components/desktop/AICodeEditorModal";
+import { VirtualPet } from "@/components/desktop/VirtualPet";
+import { Desktop3D } from "@/components/desktop/Desktop3D";
+import Desktop3DCustomization, { Desktop3DTheme } from "@/components/desktop/Desktop3DCustomization";
 
 interface Window {
   id: string;
@@ -157,6 +160,12 @@ const Desktop = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userPoints, setUserPoints] = useState(100);
   const [pointsNotificationShown, setPointsNotificationShown] = useState(false);
+  
+  // Virtual Pet and 3D Desktop state
+  const [showVirtualPet, setShowVirtualPet] = useState(true);
+  const [show3DDesktop, setShow3DDesktop] = useState(false);
+  const [current3DTheme, setCurrent3DTheme] = useState<Desktop3DTheme>("space");
+  const [show3DCustomization, setShow3DCustomization] = useState(false);
   
   // Dragging state for windows
   const [draggingWindow, setDraggingWindow] = useState<string | null>(null);
@@ -768,6 +777,64 @@ const Desktop = () => {
         isOpen={profileModalOpen} 
         onClose={() => setProfileModalOpen(false)} 
       />
+
+      {/* 3D Desktop Environment */}
+      {show3DDesktop && (
+        <div className="fixed inset-0 z-40 bg-black/80 flex items-center justify-center p-4">
+          <div className="w-full h-full max-w-6xl rounded-xl overflow-hidden relative">
+            <Desktop3D 
+              theme={current3DTheme}
+              onCustomize={() => setShow3DCustomization(true)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 3D Desktop Customization Modal */}
+      <Desktop3DCustomization
+        currentTheme={current3DTheme}
+        onThemeChange={setCurrent3DTheme}
+        isOpen={show3DCustomization}
+        onOpenChange={setShow3DCustomization}
+      />
+
+      {/* Virtual Pet Companion */}
+      {showVirtualPet && (
+        <VirtualPet
+          isFloating={true}
+          onClose={() => setShowVirtualPet(false)}
+          onTaskReminder={(taskName) => {
+            toast.info(`🐾 Companion: Don't forget about "${taskName}"!`);
+          }}
+          onTaskComplete={(taskName) => {
+            toast.success(`🎉 Companion: Great job on "${taskName}"!`);
+          }}
+        />
+      )}
+
+      {/* 3D Desktop Toggle Button */}
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setShow3DDesktop(!show3DDesktop)}
+        className="fixed top-6 right-6 z-30 px-4 py-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold text-sm shadow-xl flex items-center gap-2 transition-all"
+        title="Toggle 3D Desktop Environment"
+      >
+        <span>✨</span> 3D Environment
+      </motion.button>
+
+      {/* Show Pet Button */}
+      {!showVirtualPet && (
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowVirtualPet(true)}
+          className="fixed bottom-4 right-96 z-30 px-4 py-2 rounded-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-semibold text-sm shadow-xl flex items-center gap-2 transition-all"
+          title="Show Virtual Pet"
+        >
+          <span>🐾</span> Pet
+        </motion.button>
+      )}
     </div>
   );
 };
