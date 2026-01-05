@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { 
   Globe, Calculator, Clock, Wifi, Battery, 
   Volume2, X, Minus, Square, Search, Code, Cloud, LogOut, User,
-  Folder, Terminal, FileText, Music, Settings, Image, Users, Trophy
+  Folder, Terminal, FileText, Music, Settings, Image, Users, Trophy,
+  Lock, Zap, Laugh, Film, Wand2
 } from "lucide-react";
 import { CodeEditor } from "@/components/desktop/CodeEditor";
 import { motion } from "framer-motion";
@@ -30,6 +31,12 @@ import { Desktop3D } from "@/components/desktop/Desktop3D";
 import Desktop3DCustomization, { Desktop3DTheme } from "@/components/desktop/Desktop3DCustomization";
 import { CollaborationFeatures } from "@/components/desktop/CollaborationFeatures";
 import { AdminPetStatsPanel } from "@/components/desktop/AdminPetStatsPanel";
+import { SelfDestructingFilesManager } from "@/components/desktop/SelfDestructingFilesManager";
+import { EncryptedChat } from "@/components/desktop/EncryptedChat";
+import { AIMusicComposer } from "@/components/desktop/AIMusicComposer";
+import { MemeGifGenerator } from "@/components/desktop/MemeGifGenerator";
+import { VirtualStudio } from "@/components/desktop/VirtualStudio";
+import { PhotoAutoTagging } from "@/components/desktop/PhotoAutoTagging";
 
 interface Window {
   id: string;
@@ -138,12 +145,54 @@ const iconStyles: Record<string, { bg: string; iconColor: string; shadow: string
     shadow: "0 8px 24px rgba(255, 107, 53, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3)",
     innerGlow: "inset 0 2px 4px rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.2)"
   },
+  "self-destruct": {
+    bg: "linear-gradient(145deg, #EF4444 0%, #DC2626 50%, #991B1B 100%)",
+    iconColor: "text-white",
+    shadow: "0 8px 24px rgba(220, 38, 38, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3)",
+    innerGlow: "inset 0 2px 4px rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.2)"
+  },
+  "encrypted-chat": {
+    bg: "linear-gradient(145deg, #A855F7 0%, #7E22CE 50%, #581C87 100%)",
+    iconColor: "text-white",
+    shadow: "0 8px 24px rgba(126, 34, 206, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3)",
+    innerGlow: "inset 0 2px 4px rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.2)"
+  },
+  "music-composer": {
+    bg: "linear-gradient(145deg, #EC4899 0%, #DB2777 50%, #831843 100%)",
+    iconColor: "text-white",
+    shadow: "0 8px 24px rgba(219, 39, 119, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3)",
+    innerGlow: "inset 0 2px 4px rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.2)"
+  },
+  "meme-gen": {
+    bg: "linear-gradient(145deg, #F59E0B 0%, #D97706 50%, #78350F 100%)",
+    iconColor: "text-white",
+    shadow: "0 8px 24px rgba(217, 119, 6, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3)",
+    innerGlow: "inset 0 2px 4px rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.2)"
+  },
+  "virtual-studio": {
+    bg: "linear-gradient(145deg, #06B6D4 0%, #0891B2 50%, #164E63 100%)",
+    iconColor: "text-white",
+    shadow: "0 8px 24px rgba(8, 145, 178, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3)",
+    innerGlow: "inset 0 2px 4px rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.2)"
+  },
+  "photo-tagging": {
+    bg: "linear-gradient(145deg, #10B981 0%, #059669 50%, #065F46 100%)",
+    iconColor: "text-white",
+    shadow: "0 8px 24px rgba(5, 150, 105, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3)",
+    innerGlow: "inset 0 2px 4px rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.2)"
+  },
 };
 
 const desktopIcons = [
   { id: "files", name: "File Manager", icon: Folder },
   { id: "code-editor", name: "Code", icon: Code },
   { id: "terminal", name: "Terminal", icon: Terminal },
+  { id: "self-destruct", name: "Self-Destruct Files", icon: Lock },
+  { id: "encrypted-chat", name: "Encrypted Chat", icon: Zap },
+  { id: "music-composer", name: "AI Music", icon: Music },
+  { id: "meme-gen", name: "Meme Creator", icon: Laugh },
+  { id: "virtual-studio", name: "Studio", icon: Film },
+  { id: "photo-tagging", name: "Photo Tags", icon: Wand2 },
   { id: "browser", name: "Safari", icon: Globe },
   { id: "notes", name: "Notes", icon: FileText },
   { id: "music", name: "Music", icon: Music },
@@ -473,6 +522,18 @@ const Desktop = () => {
             <p className="text-muted-foreground">Admin access required</p>
           </div>
         );
+      case "self-destruct":
+        return <SelfDestructingFilesManager userId={user.id} />;
+      case "encrypted-chat":
+        return <EncryptedChat userId={user.id} username={user.email?.split("@")[0] || "User"} />;
+      case "music-composer":
+        return <AIMusicComposer userId={user.id} />;
+      case "meme-gen":
+        return <MemeGifGenerator userId={user.id} />;
+      case "virtual-studio":
+        return <VirtualStudio userId={user.id} />;
+      case "photo-tagging":
+        return <PhotoAutoTagging userId={user.id} />;
       default:
         return (
           <div className="h-full flex items-center justify-center bg-background">

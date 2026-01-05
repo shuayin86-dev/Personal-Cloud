@@ -100,7 +100,7 @@ export const AdminPetStatsPanel = () => {
       // Also try to update in Supabase if there's a metadata field
       const { error } = await supabase
         .from("profiles")
-        .update({ metadata: petData })
+        .update({ user_metadata: petData } as any)
         .eq("user_id", editingUser.userId);
 
       if (!error) {
